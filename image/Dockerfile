@@ -25,13 +25,16 @@ RUN apt-get update \
         can-utils \
         binutils \
         python3 \
-        python3-can \
         python3-pip \
         xxd \
- && pip3 install --no-cache-dir --break-system-packages cantools \
- && apt-get purge -y python3-pip \
- && apt-get autoremove -y \
  && rm -rf /var/lib/apt/lists/*
+
+# cantools pulls python-can in with it. Installing the distribution's
+# python-can as well leaves pip trying to replace a package it did not install,
+# which it refuses to do.
+RUN pip3 install --no-cache-dir --break-system-packages cantools \
+ && apt-get purge -y python3-pip \
+ && apt-get autoremove -y
 
 COPY --from=build /build/canshim.so /opt/canshim.so
 COPY wrappers/ /opt/can-wrappers/
