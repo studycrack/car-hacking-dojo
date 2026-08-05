@@ -126,6 +126,7 @@ class Hub:
         self.selector.register(self.server, selectors.EVENT_READ, None)
         self.inbox = {}
         self.outbox = {}
+        self.filters = {}
 
     def run(self):
         while True:
@@ -142,6 +143,7 @@ class Hub:
         client.setblocking(False)
         self.inbox[client] = b""
         self.outbox[client] = b""
+        self.filters[client] = []
         self.selector.register(client, selectors.EVENT_READ, True)
 
     def read(self, client):
@@ -154,11 +156,38 @@ class Hub:
         self.inbox[client] += chunk
         while b"\n" in self.inbox[client]:
             line, _, self.inbox[client] = self.inbox[client].partition(b"\n")
+            if line.startswith(b"!"):
+                self.set_filters(client, line[1:])
+                continue
             self.broadcast(client, line + b"\n")
 
+    def set_filters(self, client, spec):
+        """Filter for a client, the way the kernel does it for a CAN socket.
+
+        A reader that discards unwanted frames itself has to block while it
+        waits for a wanted one, which breaks the promise select() made to the
+        caller; doing it here keeps every readable byte a frame the reader
+        asked for.
+        """
+        rules = []
+        for rule in spec.decode(errors="replace").split(","):
+            if ":" not in rule:
+                continue
+            wanted, _, mask = rule.partition(":")
+            try:
+                rules.append((int(wanted, 16), int(mask, 16)))
+            except ValueError:
+                continue
+        self.filters[client] = rules
+
     def broadcast(self, sender, line):
+        can_id = int(line.split(b"#")[0], 16) if b"#" in line else None
         for client in list(self.outbox):
             if client is sender:
+                continue
+            rules = self.filters.get(client)
+            if rules and can_id is not None and not any(
+                    can_id & mask == wanted & mask for wanted, mask in rules):
                 continue
             if len(self.outbox[client]) > MAX_QUEUED_BYTES:
                 continue
@@ -191,6 +220,7 @@ class Hub:
             pass
         self.inbox.pop(client, None)
         self.outbox.pop(client, None)
+        self.filters.pop(client, None)
         client.close()
 
 

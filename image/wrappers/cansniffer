@@ -1,0 +1,3 @@
+#!/bin/sh
+# the real can-utils binary, routed to the dojo's userspace bus
+exec env LD_PRELOAD=/opt/canshim.so /usr/bin/cansniffer "$@"
