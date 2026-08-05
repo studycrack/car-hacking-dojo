@@ -19,10 +19,7 @@ def main():
     if len(data) > 8:
         sys.exit(f"cansend: invalid payload length {len(data)} (a CAN frame carries at most 8 bytes)")
 
-    try:
-        bus = vcan.Bus(interface, timeout=3)
-    except OSError:
-        sys.exit(f"cansend: interface {interface} is down (is the challenge running?)")
+    bus = vcan.attach(interface, "cansend")
     bus.send(can_id, data)
 
 

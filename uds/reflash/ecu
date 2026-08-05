@@ -1,0 +1,168 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import isotp
+import vcan
+
+REQUEST_ID = 0x7E0
+RESPONSE_ID = 0x7E8
+
+DIAGNOSTIC_SESSION_CONTROL = 0x10
+READ_MEMORY_BY_ADDRESS = 0x23
+REQUEST_DOWNLOAD = 0x34
+TRANSFER_DATA = 0x36
+REQUEST_TRANSFER_EXIT = 0x37
+TESTER_PRESENT = 0x3E
+
+PROGRAMMING_SESSION = 0x02
+
+NRC_SERVICE_NOT_SUPPORTED = 0x11
+NRC_INCORRECT_LENGTH = 0x13
+NRC_CONDITIONS_NOT_CORRECT = 0x22
+NRC_REQUEST_SEQUENCE_ERROR = 0x24
+NRC_REQUEST_OUT_OF_RANGE = 0x31
+NRC_TRANSFER_DATA_SUSPENDED = 0x71
+
+CALIBRATION_BASE = 0x08010000
+CALIBRATION_SIZE = 0x40
+MAX_BLOCK = 0x20
+
+IMMOBILIZER_ARMED_OFFSET = 0x10
+UNLOCK_PATTERN = b"\xde\xad\xbe\xef"
+
+bus = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+session = 0x01
+download = None
+block_index = 0
+staged = bytearray()
+
+calibration = bytearray(b"\x00" * CALIBRATION_SIZE)
+calibration[0x00:0x08] = b"CALIB01\x00"
+calibration[0x08:0x10] = b"\x03\x20\x19\x64\x00\x00\x00\x00"
+calibration[IMMOBILIZER_ARMED_OFFSET:IMMOBILIZER_ARMED_OFFSET + 4] = b"\x01\x01\x01\x01"
+calibration[0x20:0x30] = b"immo_armed@0x10\x00"
+
+vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+
+
+def checksum(payload):
+    return (~sum(payload) + 1) & 0xFF
+
+
+def session_control(request):
+    global session, download, staged, block_index
+    if len(request) != 2:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    session = request[1] & 0x7F
+    download, staged, block_index = None, bytearray(), 0
+    return bytes([0x50, request[1], 0x00, 0x32, 0x01, 0xF4])
+
+
+def read_memory(request):
+    if len(request) < 3:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    address_length = request[1] & 0x0F
+    size_length = request[1] >> 4
+    if len(request) != 2 + address_length + size_length:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    address = int.from_bytes(request[2:2 + address_length], "big")
+    size = int.from_bytes(request[2 + address_length:], "big")
+    if not size or size > MAX_BLOCK:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    if address < CALIBRATION_BASE or address + size > CALIBRATION_BASE + CALIBRATION_SIZE:
+        return bytes([0x7F, request[0], NRC_REQUEST_OUT_OF_RANGE])
+    offset = address - CALIBRATION_BASE
+    return bytes([0x63]) + calibration[offset:offset + size]
+
+
+def request_download(request):
+    global download, staged, block_index
+    if session != PROGRAMMING_SESSION:
+        return bytes([0x7F, request[0], NRC_CONDITIONS_NOT_CORRECT])
+    if len(request) < 4:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    address_length = request[2] & 0x0F
+    size_length = request[2] >> 4
+    if len(request) != 3 + address_length + size_length:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    address = int.from_bytes(request[3:3 + address_length], "big")
+    size = int.from_bytes(request[3 + address_length:], "big")
+    if address < CALIBRATION_BASE or address + size > CALIBRATION_BASE + CALIBRATION_SIZE:
+        return bytes([0x7F, request[0], NRC_REQUEST_OUT_OF_RANGE])
+    download = (address, size)
+    staged = bytearray()
+    block_index = 0
+    return bytes([0x74, 0x20, MAX_BLOCK])
+
+
+def transfer_data(request):
+    global block_index, staged
+    if download is None:
+        return bytes([0x7F, request[0], NRC_REQUEST_SEQUENCE_ERROR])
+    if len(request) < 2:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    if len(request) - 2 > MAX_BLOCK:
+        return bytes([0x7F, request[0], NRC_TRANSFER_DATA_SUSPENDED])
+    if request[1] != (block_index + 1) & 0xFF:
+        return bytes([0x7F, request[0], NRC_REQUEST_SEQUENCE_ERROR])
+    block_index = request[1]
+    staged += request[2:]
+    return bytes([0x76, request[1]])
+
+
+def request_transfer_exit(request):
+    global download, staged
+    if download is None:
+        return bytes([0x7F, request[0], NRC_REQUEST_SEQUENCE_ERROR])
+    if len(request) != 2:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+
+    address, size = download
+    if len(staged) != size:
+        download = None
+        return bytes([0x7F, request[0], NRC_REQUEST_SEQUENCE_ERROR])
+    if request[1] != checksum(staged):
+        download = None
+        return bytes([0x7F, request[0], NRC_REQUEST_OUT_OF_RANGE])
+
+    offset = address - CALIBRATION_BASE
+    calibration[offset:offset + size] = staged
+    download = None
+
+    armed = calibration[IMMOBILIZER_ARMED_OFFSET:IMMOBILIZER_ARMED_OFFSET + 4]
+    if armed == UNLOCK_PATTERN:
+        return bytes([0x77, 0x01]) + flag.encode()
+    return bytes([0x77, 0x00])
+
+
+def handle(request):
+    if request[0] == DIAGNOSTIC_SESSION_CONTROL:
+        return session_control(request)
+    if request[0] == TESTER_PRESENT:
+        return bytes([0x7E, 0x00])
+    if request[0] == READ_MEMORY_BY_ADDRESS:
+        return read_memory(request)
+    if request[0] == REQUEST_DOWNLOAD:
+        return request_download(request)
+    if request[0] == TRANSFER_DATA:
+        return transfer_data(request)
+    if request[0] == REQUEST_TRANSFER_EXIT:
+        return request_transfer_exit(request)
+    return bytes([0x7F, request[0], NRC_SERVICE_NOT_SUPPORTED])
+
+
+frames = bus.frames()
+while True:
+    try:
+        request = isotp.recv(bus, REQUEST_ID, RESPONSE_ID, timeout=3600, frames=frames)
+    except TimeoutError:
+        continue
+    if not request:
+        continue
+    try:
+        isotp.send(bus, RESPONSE_ID, REQUEST_ID, handle(request), timeout=10, frames=frames)
+    except TimeoutError:
+        continue

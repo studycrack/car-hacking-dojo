@@ -1,0 +1,9 @@
+#!/bin/bash
+
+chmod 700 /challenge/ecu
+
+touch /run/challenge.log
+chmod 600 /run/challenge.log
+
+/run/dojo/bin/setsid /challenge/vcan.py vcan0 </dev/null >>/run/challenge.log 2>&1 &
+/run/dojo/bin/setsid /challenge/ecu </dev/null >>/run/challenge.log 2>&1 &

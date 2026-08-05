@@ -30,10 +30,7 @@ def main():
     interface, _, filter_spec = args.interfaces[0].partition(",")
     filters = [parse_filter(part) for part in filter_spec.split(",") if part]
 
-    try:
-        bus = vcan.Bus(interface, timeout=3)
-    except OSError:
-        sys.exit(f"candump: interface {interface} is down (is the challenge running?)")
+    bus = vcan.attach(interface, "candump")
 
     start = time.time()
     dumped = 0

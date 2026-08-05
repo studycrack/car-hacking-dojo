@@ -87,6 +87,15 @@ class Bus:
         self.sock.close()
 
 
+def attach(interface, tool, timeout=3):
+    try:
+        return Bus(interface, timeout=timeout)
+    except PermissionError:
+        raise SystemExit(f"{tool}: {interface}: permission denied -- you are not on that bus")
+    except OSError:
+        raise SystemExit(f"{tool}: {interface}: no such interface (is the challenge running?)")
+
+
 def transmit_periodically(bus, can_id, payload_source, hz):
     def loop():
         period = 1.0 / hz
@@ -102,14 +111,15 @@ def transmit_periodically(bus, can_id, payload_source, hz):
 
 
 class Hub:
-    def __init__(self, interface):
+    def __init__(self, interface, private=False):
         self.path = socket_path(interface)
         os.makedirs(SOCKET_DIR, exist_ok=True)
         if os.path.exists(self.path):
             os.remove(self.path)
         self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.server.bind(self.path)
-        os.chmod(self.path, 0o666)
+        # a private bus stands in for one the attacker cannot physically reach
+        os.chmod(self.path, 0o600 if private else 0o666)
         self.server.listen(64)
         self.server.setblocking(False)
         self.selector = selectors.DefaultSelector()
@@ -185,8 +195,9 @@ class Hub:
 
 
 def main():
-    interface = sys.argv[1] if len(sys.argv) > 1 else "vcan0"
-    Hub(interface).run()
+    arguments = [argument for argument in sys.argv[1:] if not argument.startswith("--")]
+    interface = arguments[0] if arguments else "vcan0"
+    Hub(interface, private="--private" in sys.argv[1:]).run()
 
 
 if __name__ == "__main__":

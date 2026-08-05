@@ -1,0 +1,95 @@
+#!/run/dojo/bin/python3 -u
+import random
+import sys
+import time
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+FOB_ID = 0x2C5
+STATUS_ID = 0x19A
+BUTTON_ID = 0x0FF
+FLAG_ID = 0x7C0
+
+REPEATS = 3
+DEBOUNCE_SECONDS = 2.0
+REPLAY_AGE = 5.0
+WINDOW = 256
+SECRET = 0x3F5A91C7
+
+RESULT_IDLE = 0x00
+RESULT_UNLOCKED = 0x01
+RESULT_STALE_COUNTER = 0x02
+RESULT_BAD_CODE = 0x03
+
+bus = vcan.Bus("vcan0")
+fob = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+fob_counter = random.randrange(0x1000, 0x2000)
+accepted_counter = fob_counter - 1
+transmitted = {}
+deaf_until = 0.0
+unlocks = 0
+last_result = RESULT_IDLE
+
+
+def code_for(counter):
+    mixed = (counter * 0x9E3779B1 ^ SECRET) & 0xFFFFFFFF
+    return ((mixed >> 11) ^ mixed) & 0xFFFFFFFF
+
+
+def transmission(counter):
+    code = code_for(counter)
+    return bytes([counter >> 8 & 0xFF, counter & 0xFF,
+                  code >> 24 & 0xFF, code >> 16 & 0xFF, code >> 8 & 0xFF, code & 0xFF])
+
+
+def status():
+    return bytes([0x01 if unlocks == 0 else 0x00, unlocks & 0xFF, last_result, 0x00])
+
+
+def press_button():
+    global fob_counter
+    for _ in range(REPEATS):
+        transmitted[fob_counter] = time.time()
+        fob.send(FOB_ID, transmission(fob_counter))
+        fob_counter += 1
+        time.sleep(0.05)
+
+
+vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+vcan.transmit_periodically(bus, 0x3C1, lambda: bytes([0x5A, 0x00, 0x44, 0x00]), hz=2)
+vcan.transmit_periodically(bus, STATUS_ID, status, hz=2)
+
+for can_id, data in bus.frames():
+    if can_id == BUTTON_ID:
+        press_button()
+        continue
+
+    if can_id != FOB_ID or len(data) != 6:
+        continue
+
+    # a receiver that has just acted on a code stops listening for a moment,
+    # which is why the rest of a fob's burst is never consumed
+    if time.time() < deaf_until:
+        continue
+
+    counter = data[0] << 8 | data[1]
+    code = int.from_bytes(data[2:6], "big")
+
+    if code != code_for(counter):
+        last_result = RESULT_BAD_CODE
+        continue
+    if not accepted_counter < counter <= accepted_counter + WINDOW:
+        last_result = RESULT_STALE_COUNTER
+        continue
+
+    age = time.time() - transmitted.get(counter, 0.0)
+    accepted_counter = counter
+    deaf_until = time.time() + DEBOUNCE_SECONDS
+    unlocks += 1
+    last_result = RESULT_UNLOCKED
+
+    if age > REPLAY_AGE:
+        bus.send_text(FLAG_ID, flag)
