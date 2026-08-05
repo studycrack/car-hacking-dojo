@@ -188,14 +188,19 @@ class Hub:
         waits for a wanted one, which breaks the promise select() made to the
         caller; doing it here keeps every readable byte a frame the reader
         asked for.
+
+        A rule written ~ID:MASK is inverted, the way CAN_INV_FILTER is: it
+        matches every identifier except that one.
         """
         rules = []
         for rule in spec.decode(errors="replace").split(","):
             if ":" not in rule:
                 continue
             wanted, _, mask = rule.partition(":")
+            inverted = wanted.startswith("~")
             try:
-                rules.append((int(wanted, 16), int(mask, 16)))
+                rules.append((int(wanted[1:] if inverted else wanted, 16),
+                              int(mask, 16), inverted))
             except ValueError:
                 continue
         self.filters[client] = rules
@@ -209,8 +214,11 @@ class Hub:
             if client is sender:
                 continue
             rules = self.filters.get(client)
+            # the kernel ORs the rules together, and an inverted rule matches
+            # when the identifier does not
             if rules and can_id is not None and not any(
-                    can_id & mask == wanted & mask for wanted, mask in rules):
+                    (can_id & mask == wanted & mask) != inverted
+                    for wanted, mask, inverted in rules):
                 continue
             if len(self.outbox[client]) > MAX_QUEUED_BYTES:
                 continue

@@ -123,9 +123,13 @@ static void send_filters(int fd, struct can_state *state)
         return;
     char line[512];
     int offset = snprintf(line, sizeof(line), "!");
+    /* an inverted filter goes across as ~ID:MASK. Dropping the CAN_INV_FILTER
+       bit here and sending a plain rule would hand the hub the exact opposite
+       of what the caller asked for, silently. */
     for (int index = 0; index < state->filter_count && offset < (int)sizeof(line) - 24; index++)
-        offset += snprintf(line + offset, sizeof(line) - offset, "%s%X:%X",
+        offset += snprintf(line + offset, sizeof(line) - offset, "%s%s%X:%X",
                            index ? "," : "",
+                           (state->filters[index].can_id & CAN_INV_FILTER) ? "~" : "",
                            state->filters[index].can_id & ~CAN_INV_FILTER,
                            state->filters[index].can_mask);
     offset += snprintf(line + offset, sizeof(line) - offset, "\n");
@@ -239,20 +243,9 @@ int close(int fd)
     return real_close(fd);
 }
 
-static int passes_filters(struct can_state *state, canid_t can_id)
-{
-    if (state->filter_count == 0)
-        return 1;
-    for (int index = 0; index < state->filter_count; index++) {
-        struct can_filter *filter = &state->filters[index];
-        int inverted = !!(filter->can_id & CAN_INV_FILTER);
-        canid_t wanted = filter->can_id & ~CAN_INV_FILTER;
-        int matched = ((can_id & filter->can_mask) == (wanted & filter->can_mask));
-        if (matched != inverted)
-            return 1;
-    }
-    return 0;
-}
+/* Filtering itself belongs to the hub, not here: a reader that discards
+   unwanted frames in this process has to block while it waits for a wanted
+   one, which breaks the promise select() made to the caller. */
 
 static int take_line(struct can_state *state, char *line, size_t size)
 {

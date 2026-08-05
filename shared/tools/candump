@@ -9,14 +9,15 @@ import vcan
 
 
 def parse_filter(text):
-    can_id, _, mask = text.partition(":")
-    return int(can_id, 16), int(mask, 16) if mask else 0x7FF
+    inverted = text.startswith("~")
+    can_id, _, mask = (text[1:] if inverted else text).partition(":")
+    return int(can_id, 16), int(mask, 16) if mask else 0x7FF, inverted
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="dump CAN traffic",
-        usage="candump [-a] [-t] [-n COUNT] INTERFACE[,ID:MASK]...",
+        usage="candump [-a] [-t] [-n COUNT] INTERFACE[,ID:MASK][,~ID:MASK]...",
     )
     parser.add_argument("-a", "--ascii", action="store_true", help="show the payload as ascii")
     parser.add_argument("-t", "--timestamp", action="store_true", help="show a timestamp for each frame")
@@ -35,7 +36,8 @@ def main():
     start = time.time()
     dumped = 0
     for can_id, data in bus.frames():
-        if filters and not any(can_id & mask == wanted & mask for wanted, mask in filters):
+        if filters and not any((can_id & mask == wanted & mask) != inverted
+                               for wanted, mask, inverted in filters):
             continue
         line = ""
         if args.timestamp:
