@@ -35,6 +35,10 @@ resources:
     type: challenge
     name: Dumping the Firmware
 
+  - id: fault-memory
+    type: challenge
+    name: Covering Your Tracks
+
   - id: reflash
     type: challenge
     name: Writing It Back

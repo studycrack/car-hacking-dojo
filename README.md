@@ -14,14 +14,16 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `injection` | forging frames with `cansend` against a live controller | 25m |
 | | `spoofing` | reverse engineering a signal's identifier, offset, and scale, then out-transmitting the real sensor | 50m |
 | | `integrity` | recovering an alive counter and checksum from captured traffic to forge frames a validating module accepts | 55m |
+| | `secoc` | forging an authenticated frame without the key, by changing a field the MAC was never computed over | 60m |
 | Diagnostics and UDS | `iso-tp` | segmentation and flow control, by hand | 45m |
 | | `ecu-discovery` | address and data-identifier enumeration | 30m |
 | | `security-access` | bypassing a SecurityAccess attempt limiter via session reset, then brute forcing a 16-bit key | 45m |
 | | `firmware-dump` | ReadMemoryByAddress: locating flash, probing the read ceiling, dumping it, and mining the image for an undocumented service | 45m |
+| | `fault-memory` | reading and clearing diagnostic trouble codes, once the reconnaissance that finds the routine is what blocks it | 40m |
 | | `reflash` | the RequestDownload / TransferData / RequestTransferExit sequence, and patching a calibration block | 50m |
 | | `gateway` | reading a central gateway's routing table to reach a bus the OBD connector is not on | 40m |
 
-Roughly **eight hours** of hands-on time for a student comfortable with Linux
+Roughly **ten hours** of hands-on time for a student comfortable with Linux
 and Python; budget half again as long for one who is not. The two modules are
 independent of each other, but within a module the challenges assume the
 earlier ones --- `rolling-code` expects the capture discipline `fob-capture`
