@@ -1,0 +1,38 @@
+#!/run/dojo/bin/python3 -u
+import random
+import sys
+import time
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+FLAG_ID = 0x7C0
+
+bus = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+engine_rpm = 800
+
+
+def powertrain():
+    global engine_rpm
+    engine_rpm = max(750, min(6500, engine_rpm + random.randint(-120, 120)))
+    return bytes([engine_rpm >> 8, engine_rpm & 0xFF, 0x00, 0x00, 0x27, 0x10, 0x00, 0x00])
+
+
+def wheel_speed():
+    speed = int(abs(engine_rpm - 800) / 45)
+    return bytes([speed, speed, speed, speed, 0x00, 0x00, 0x00, 0x00])
+
+
+def coolant():
+    return bytes([0x5A, 0x00, random.randint(0x40, 0x48), 0x00])
+
+
+vcan.transmit_periodically(bus, 0x0C0, powertrain, hz=20)
+vcan.transmit_periodically(bus, 0x1A0, wheel_speed, hz=10)
+vcan.transmit_periodically(bus, 0x3C1, coolant, hz=2)
+
+while True:
+    bus.send_text(FLAG_ID, flag)
+    time.sleep(2)

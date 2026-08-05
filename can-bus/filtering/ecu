@@ -1,0 +1,36 @@
+#!/run/dojo/bin/python3 -u
+import random
+import sys
+import time
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+TELEMETRY_ID = 0x2A1
+CHUNK_SIZE = 7
+
+bus = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+noisy_ids = [0x0C0, 0x0D1, 0x102, 0x110, 0x120, 0x13A, 0x158, 0x164, 0x17C, 0x188,
+             0x191, 0x1A0, 0x1B4, 0x1C4, 0x1D0, 0x1E8, 0x200, 0x215, 0x224, 0x230,
+             0x244, 0x261, 0x27F, 0x280, 0x2B0, 0x2C5, 0x300, 0x316, 0x324, 0x33B,
+             0x340, 0x35C, 0x370, 0x388, 0x3A0, 0x3C1, 0x3E9, 0x400, 0x412, 0x420]
+
+for can_id in noisy_ids:
+    length = random.choice([2, 4, 8, 8, 8])
+    vcan.transmit_periodically(
+        bus,
+        can_id,
+        lambda length=length: bytes(random.randint(0, 255) for _ in range(length)),
+        hz=random.choice([5, 10, 20, 50]),
+    )
+
+chunks = [flag[offset:offset + CHUNK_SIZE] for offset in range(0, len(flag), CHUNK_SIZE)]
+while True:
+    order = list(range(len(chunks)))
+    random.shuffle(order)
+    for index in order:
+        bus.send(TELEMETRY_ID, bytes([index]) + chunks[index].encode())
+        time.sleep(0.05)
+    time.sleep(4)

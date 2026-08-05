@@ -1,0 +1,56 @@
+#!/run/dojo/bin/python3 -u
+import random
+import sys
+import threading
+import time
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+STATUS_ID = 0x19A
+COMMAND_ID = 0x19B
+FLAG_ID = 0x7C0
+
+UNLOCK = 0x02
+ALL_DOORS = 0xFF
+SESSION_LIFETIME = 15
+
+bus = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+state = threading.Lock()
+session = random.getrandbits(16)
+doors_locked = True
+
+
+def rotate_session():
+    global session
+    while True:
+        time.sleep(SESSION_LIFETIME)
+        with state:
+            session = random.getrandbits(16)
+
+
+def status():
+    with state:
+        return bytes([0x01 if doors_locked else 0x00, 0x00, session >> 8, session & 0xFF,
+                      0x00, 0x00, 0x00, 0x00])
+
+
+threading.Thread(target=rotate_session, daemon=True).start()
+vcan.transmit_periodically(bus, STATUS_ID, status, hz=1)
+vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+vcan.transmit_periodically(bus, 0x3C1, lambda: bytes([0x5A, 0x00, 0x44, 0x00]), hz=2)
+
+for can_id, data in bus.frames():
+    if can_id != COMMAND_ID or len(data) < 4:
+        continue
+    with state:
+        current = session
+    if data[0] != UNLOCK or data[1] != ALL_DOORS:
+        continue
+    if (data[2] << 8 | data[3]) != current:
+        continue
+    with state:
+        doors_locked = False
+    bus.send_text(FLAG_ID, flag)

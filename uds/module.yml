@@ -1,0 +1,32 @@
+name: Diagnostics and UDS
+
+resources:
+  - type: markdown
+    name: The Protocol Behind the OBD-II Port
+    expandable: false
+    content: |
+      Raw CAN frames are how a car talks to itself. **UDS** --- Unified
+      Diagnostic Services, ISO 14229 --- is how a car talks to a technician,
+      and it is a far more powerful interface: read fault memory, run actuator
+      tests, read and write memory, reflash a controller.
+
+      Because a diagnostic exchange rarely fits in 8 bytes, UDS runs on top of
+      **ISO-TP** (ISO 15765-2), a transport layer that segments a payload
+      across many frames and has the receiver pace the sender with flow control
+      frames.
+
+      Everything a dealer tool can do is reachable by anyone who can put frames
+      on the bus. The only thing standing in the way is UDS's own access
+      control, which is where this module ends up.
+
+  - id: iso-tp
+    type: challenge
+    name: Segmented Transport
+
+  - id: ecu-discovery
+    type: challenge
+    name: Enumerating Controllers
+
+  - id: security-access
+    type: challenge
+    name: Defeating SecurityAccess

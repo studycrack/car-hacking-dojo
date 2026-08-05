@@ -1,0 +1,54 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import isotp
+import vcan
+
+TESTER_PRESENT = 0x3E
+READ_DATA_BY_IDENTIFIER = 0x22
+
+NRC_SERVICE_NOT_SUPPORTED = 0x11
+NRC_REQUEST_OUT_OF_RANGE = 0x31
+
+bus = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+vcan.transmit_periodically(bus, 0x1A0, lambda: bytes([0, 0, 0, 0, 0, 0, 0, 0]), hz=5)
+
+controllers = {
+    0x7E0: {0xF190: b"KMHFG4JG7CA123456", 0xF18C: b"ECM-8841-002"},
+    0x7E1: {0xF190: b"KMHFG4JG7CA123456", 0xF18C: b"TCM-2210-119"},
+    0x7E2: {0xF190: b"KMHFG4JG7CA123456", 0xF18C: b"ABS-7730-041"},
+    0x7E3: {0xF190: b"KMHFG4JG7CA123456", 0xF18C: b"SRS-1904-006"},
+    0x745: {0xF190: b"KMHFG4JG7CA123456", 0xF18C: b"TCU-DEV-BOARD-0001",
+            0xF1FF: flag.encode()},
+}
+
+
+def handle(records, request):
+    if request[0] == TESTER_PRESENT:
+        return bytes([0x7E, 0x00])
+    if request[0] != READ_DATA_BY_IDENTIFIER:
+        return bytes([0x7F, request[0], NRC_SERVICE_NOT_SUPPORTED])
+    if len(request) != 3:
+        return bytes([0x7F, request[0], 0x13])
+    did = request[1] << 8 | request[2]
+    if did not in records:
+        return bytes([0x7F, request[0], NRC_REQUEST_OUT_OF_RANGE])
+    return bytes([0x62, request[1], request[2]]) + records[did]
+
+
+frames = bus.frames()
+for can_id, data in frames:
+    if can_id not in controllers or len(data) < 2 or data[0] >> 4 != isotp.SINGLE_FRAME:
+        continue
+    request = data[1:1 + (data[0] & 0x0F)]
+    if not request:
+        continue
+    response = handle(controllers[can_id], request)
+    try:
+        isotp.send(bus, can_id + 8, can_id, response, timeout=10, frames=frames)
+    except TimeoutError:
+        continue

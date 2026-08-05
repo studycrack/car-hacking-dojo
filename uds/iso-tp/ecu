@@ -1,0 +1,53 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import isotp
+import vcan
+
+REQUEST_ID = 0x7E0
+RESPONSE_ID = 0x7E8
+
+READ_DATA_BY_IDENTIFIER = 0x22
+VIN_DID = 0xF190
+UNLOCK_TOKEN_DID = 0xF1AB
+
+NRC_SERVICE_NOT_SUPPORTED = 0x11
+NRC_REQUEST_OUT_OF_RANGE = 0x31
+
+VIN = b"KMHFG4JG7CA123456"
+
+bus = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+vcan.transmit_periodically(bus, 0x1A0, lambda: bytes([0, 0, 0, 0, 0, 0, 0, 0]), hz=5)
+
+
+def handle(request):
+    if not request:
+        return None
+    if request[0] != READ_DATA_BY_IDENTIFIER:
+        return bytes([0x7F, request[0], NRC_SERVICE_NOT_SUPPORTED])
+    if len(request) != 3:
+        return bytes([0x7F, request[0], 0x13])
+    did = request[1] << 8 | request[2]
+    if did == VIN_DID:
+        return bytes([0x62, request[1], request[2]]) + VIN
+    if did == UNLOCK_TOKEN_DID:
+        return bytes([0x62, request[1], request[2]]) + flag.encode()
+    return bytes([0x7F, request[0], NRC_REQUEST_OUT_OF_RANGE])
+
+
+frames = bus.frames()
+for can_id, data in frames:
+    if can_id != REQUEST_ID or len(data) < 1 or data[0] >> 4 != isotp.SINGLE_FRAME:
+        continue
+    request = data[1:1 + (data[0] & 0x0F)]
+    response = handle(request)
+    if response is None:
+        continue
+    try:
+        isotp.send(bus, RESPONSE_ID, REQUEST_ID, response, timeout=120, frames=frames)
+    except TimeoutError:
+        continue

@@ -1,0 +1,76 @@
+#!/run/dojo/bin/python3 -u
+import math
+import random
+import sys
+import threading
+import time
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+WHEEL_SPEED_ID = 0x1C4
+CLUSTER_ID = 0x3D1
+FLAG_ID = 0x7C0
+
+TARGET_KPH = 133
+HOLD_SECONDS = 3
+REQUIRED_SHARE = 0.9
+SENSOR_HZ = 5
+
+cluster = vcan.Bus("vcan0")
+sensor = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+displayed = 0
+engine_rpm = 800
+state = threading.Lock()
+
+noisy_ids = [0x0C0, 0x0D1, 0x110, 0x13A, 0x158, 0x164, 0x188, 0x191, 0x1A0, 0x1B4,
+             0x1D0, 0x1E8, 0x215, 0x230, 0x261, 0x280, 0x2B0, 0x300, 0x324, 0x340,
+             0x370, 0x3A0, 0x3C1, 0x400, 0x420]
+
+
+def true_speed():
+    global engine_rpm
+    phase = time.time() / 24 * 2 * math.pi
+    speed = 40 + 39 * math.sin(phase)
+    engine_rpm = int(800 + speed * 55)
+    raw = int(speed * 100)
+    return bytes([0x00, 0x00, raw >> 8, raw & 0xFF, 0x00, 0x00, 0x00, 0x00])
+
+
+def cluster_readout():
+    with state:
+        raw = displayed
+    return bytes([raw >> 8, raw & 0xFF, engine_rpm >> 8, engine_rpm & 0xFF, 0x00, 0x00, 0x00, 0x00])
+
+
+for can_id in noisy_ids:
+    length = random.choice([2, 4, 8, 8])
+    vcan.transmit_periodically(
+        cluster,
+        can_id,
+        lambda length=length: bytes(random.randint(0, 255) for _ in range(length)),
+        hz=random.choice([5, 10, 20]),
+    )
+
+vcan.transmit_periodically(sensor, WHEEL_SPEED_ID, true_speed, hz=SENSOR_HZ)
+vcan.transmit_periodically(cluster, CLUSTER_ID, cluster_readout, hz=10)
+
+window = []
+for can_id, data in cluster.frames():
+    if can_id != WHEEL_SPEED_ID or len(data) < 4:
+        continue
+    raw = data[2] << 8 | data[3]
+    with state:
+        displayed = raw
+
+    now = time.time()
+    window.append((now, raw))
+    window = [entry for entry in window if entry[0] > now - HOLD_SECONDS]
+    if window[0][0] > now - HOLD_SECONDS + 0.1:
+        continue
+    on_target = sum(1 for _, value in window if value == TARGET_KPH * 100)
+    if on_target >= REQUIRED_SHARE * len(window) and len(window) > HOLD_SECONDS * SENSOR_HZ * 4:
+        cluster.send_text(FLAG_ID, flag)
+        window = []

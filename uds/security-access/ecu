@@ -1,0 +1,141 @@
+#!/run/dojo/bin/python3 -u
+import random
+import sys
+import time
+
+sys.path.insert(0, "/challenge")
+import isotp
+import vcan
+
+REQUEST_ID = 0x7E0
+RESPONSE_ID = 0x7E8
+
+DIAGNOSTIC_SESSION_CONTROL = 0x10
+SECURITY_ACCESS = 0x27
+ROUTINE_CONTROL = 0x31
+
+DEFAULT_SESSION = 0x01
+PROGRAMMING_SESSION = 0x02
+EXTENDED_SESSION = 0x03
+
+REQUEST_SEED = 0x01
+SEND_KEY = 0x02
+
+UNLOCK_ROUTINE = 0xF00D
+
+NRC_SUB_FUNCTION_NOT_SUPPORTED = 0x12
+NRC_INCORRECT_LENGTH = 0x13
+NRC_CONDITIONS_NOT_CORRECT = 0x22
+NRC_REQUEST_SEQUENCE_ERROR = 0x24
+NRC_REQUEST_OUT_OF_RANGE = 0x31
+NRC_SECURITY_ACCESS_DENIED = 0x33
+NRC_INVALID_KEY = 0x35
+NRC_EXCEED_ATTEMPTS = 0x36
+NRC_TIME_DELAY_NOT_EXPIRED = 0x37
+NRC_SERVICE_NOT_SUPPORTED = 0x11
+
+MAX_ATTEMPTS = 3
+LOCKOUT_SECONDS = 10
+
+bus = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+vcan.transmit_periodically(bus, 0x1A0, lambda: bytes([0, 0, 0, 0, 0, 0, 0, 0]), hz=5)
+
+session = DEFAULT_SESSION
+seed = None
+unlocked = False
+failed_attempts = 0
+locked_out_until = 0
+
+
+def expected_key(seed_value):
+    mixed = (seed_value ^ 0xA5A5A5A5) & 0xFFFFFFFF
+    mixed = (mixed * 0x9E3779B1) & 0xFFFFFFFF
+    return ((mixed >> 13) ^ (mixed >> 27)) & 0xFFFF
+
+
+def session_control(request):
+    global session, seed, unlocked, failed_attempts, locked_out_until
+    if len(request) != 2:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    requested = request[1] & 0x7F
+    if requested not in (DEFAULT_SESSION, PROGRAMMING_SESSION, EXTENDED_SESSION):
+        return bytes([0x7F, request[0], NRC_SUB_FUNCTION_NOT_SUPPORTED])
+    session = requested
+    unlocked = False
+    failed_attempts = 0
+    locked_out_until = 0
+    if requested == DEFAULT_SESSION:
+        seed = None
+    return bytes([0x50, requested, 0x00, 0x32, 0x01, 0xF4])
+
+
+def security_access(request):
+    global seed, unlocked, failed_attempts, locked_out_until
+    if len(request) < 2:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    if session != EXTENDED_SESSION:
+        return bytes([0x7F, request[0], NRC_CONDITIONS_NOT_CORRECT])
+    if time.time() < locked_out_until:
+        return bytes([0x7F, request[0], NRC_TIME_DELAY_NOT_EXPIRED])
+
+    if request[1] == REQUEST_SEED:
+        if unlocked:
+            return bytes([0x67, REQUEST_SEED, 0x00, 0x00, 0x00, 0x00])
+        if seed is None:
+            seed = random.getrandbits(32)
+        return bytes([0x67, REQUEST_SEED, seed >> 24 & 0xFF, seed >> 16 & 0xFF,
+                      seed >> 8 & 0xFF, seed & 0xFF])
+
+    if request[1] == SEND_KEY:
+        if seed is None:
+            return bytes([0x7F, request[0], NRC_REQUEST_SEQUENCE_ERROR])
+        if len(request) != 4:
+            return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+        if (request[2] << 8 | request[3]) == expected_key(seed):
+            unlocked = True
+            failed_attempts = 0
+            return bytes([0x67, SEND_KEY])
+        failed_attempts += 1
+        if failed_attempts >= MAX_ATTEMPTS:
+            locked_out_until = time.time() + LOCKOUT_SECONDS
+            return bytes([0x7F, request[0], NRC_EXCEED_ATTEMPTS])
+        return bytes([0x7F, request[0], NRC_INVALID_KEY])
+
+    return bytes([0x7F, request[0], NRC_SUB_FUNCTION_NOT_SUPPORTED])
+
+
+def routine_control(request):
+    if len(request) != 4:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    routine = request[2] << 8 | request[3]
+    if routine != UNLOCK_ROUTINE:
+        return bytes([0x7F, request[0], NRC_REQUEST_OUT_OF_RANGE])
+    if not unlocked:
+        return bytes([0x7F, request[0], NRC_SECURITY_ACCESS_DENIED])
+    return bytes([0x71, request[1], request[2], request[3]]) + flag.encode()
+
+
+def handle(request):
+    if request[0] == DIAGNOSTIC_SESSION_CONTROL:
+        return session_control(request)
+    if request[0] == SECURITY_ACCESS:
+        return security_access(request)
+    if request[0] == ROUTINE_CONTROL:
+        return routine_control(request)
+    return bytes([0x7F, request[0], NRC_SERVICE_NOT_SUPPORTED])
+
+
+frames = bus.frames()
+for can_id, data in frames:
+    if can_id != REQUEST_ID or len(data) < 2 or data[0] >> 4 != isotp.SINGLE_FRAME:
+        continue
+    request = data[1:1 + (data[0] & 0x0F)]
+    if not request:
+        continue
+    try:
+        isotp.send(bus, RESPONSE_ID, REQUEST_ID, handle(request), timeout=10, frames=frames)
+    except TimeoutError:
+        continue

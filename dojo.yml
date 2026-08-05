@@ -1,0 +1,12 @@
+id: car-hacking
+
+name: Car Hacking
+
+award:
+  emoji: 🚗
+
+image: pwncollege/challenge-simple
+
+modules:
+  - id: can-bus
+  - id: uds

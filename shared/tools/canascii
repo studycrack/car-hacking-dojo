@@ -1,0 +1,39 @@
+#!/run/dojo/bin/python3 -u
+"""Concatenate the payloads of every frame seen on one identifier.
+
+Frames are printed in the order they arrive, which is not necessarily the
+order the sender intended them to be read in.
+"""
+
+import argparse
+import os
+import sys
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+
+def main():
+    parser = argparse.ArgumentParser(usage="canascii [-s SKIP] INTERFACE ID")
+    parser.add_argument("-s", "--skip", type=int, default=0, help="ignore the first SKIP bytes of every payload")
+    parser.add_argument("interface")
+    parser.add_argument("can_id")
+    args = parser.parse_args()
+
+    try:
+        bus = vcan.Bus(args.interface, timeout=3)
+    except OSError:
+        sys.exit(f"canascii: interface {args.interface} is down (is the challenge running?)")
+
+    wanted = int(args.can_id, 16)
+    for can_id, data in bus.frames():
+        if can_id == wanted:
+            sys.stdout.write(vcan.ascii_repr(data[args.skip:]))
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (KeyboardInterrupt, BrokenPipeError):
+        print()
+        os._exit(0)

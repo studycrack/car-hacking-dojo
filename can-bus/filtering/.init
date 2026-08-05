@@ -1,0 +1,4 @@
+#!/bin/bash
+
+/run/dojo/bin/setsid /challenge/vcan.py vcan0 </dev/null >/dev/null 2>&1 &
+/run/dojo/bin/setsid /challenge/ecu </dev/null >/dev/null 2>&1 &
