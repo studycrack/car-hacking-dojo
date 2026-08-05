@@ -1,0 +1,15 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+BUTTON_ID = 0x0FE
+
+try:
+    bus = vcan.Bus("vcan0", timeout=3)
+except OSError:
+    sys.exit("park-assist: interface vcan0 is down (is the challenge running?)")
+
+bus.send(BUTTON_ID, bytes([0x01]))
+print("park assist engaged  --  the module is issuing a steering request.")

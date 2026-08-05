@@ -12,6 +12,7 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `fob-capture` | capturing a one-shot transmission: attach the capture before triggering the event |
 | | `injection` | forging frames with `cansend` against a live controller |
 | | `spoofing` | reverse engineering a signal's identifier, offset, and scale, then out-transmitting the real sensor |
+| | `integrity` | recovering an alive counter and checksum from captured traffic to forge frames a validating module accepts |
 | Diagnostics and UDS | `iso-tp` | segmentation and flow control, by hand |
 | | `ecu-discovery` | address and data-identifier enumeration |
 | | `security-access` | bypassing a SecurityAccess attempt limiter via session reset, then brute forcing a 16-bit key |
