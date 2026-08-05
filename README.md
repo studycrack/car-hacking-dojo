@@ -9,6 +9,7 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | --- | --- | --- |
 | The CAN Bus | `sniffing` | reading a bus with `candump` |
 | | `filtering` | identifier filters, payload structure |
+| | `fob-capture` | capturing a one-shot transmission: attach the capture before triggering the event |
 | | `injection` | forging frames with `cansend` against a live controller |
 | | `spoofing` | reverse engineering a signal's identifier, offset, and scale, then out-transmitting the real sensor |
 | Diagnostics and UDS | `iso-tp` | segmentation and flow control, by hand |

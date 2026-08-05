@@ -26,6 +26,10 @@ resources:
     type: challenge
     name: Finding the Signal
 
+  - id: fob-capture
+    type: challenge
+    name: Catching a One-Shot
+
   - id: injection
     type: challenge
     name: Forging Frames

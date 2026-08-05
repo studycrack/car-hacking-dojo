@@ -1,0 +1,22 @@
+#!/run/dojo/bin/python3 -u
+import random
+import sys
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+FOB_ID = 0x2C5
+BUTTON_ID = 0x0FF
+
+bus = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+vcan.transmit_periodically(bus, 0x1A0, lambda: bytes([0, 0, 0, 0, 0, 0, 0, 0]), hz=5)
+vcan.transmit_periodically(bus, 0x3C1, lambda: bytes([0x5A, 0x00, 0x44, 0x00]), hz=2)
+vcan.transmit_periodically(bus, 0x212, lambda: bytes(random.randint(0, 255) for _ in range(6)), hz=8)
+
+for can_id, data in bus.frames():
+    if can_id != BUTTON_ID:
+        continue
+    bus.send_text(FOB_ID, flag)

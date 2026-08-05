@@ -37,15 +37,7 @@ def status():
                       0x00, 0x00, 0x00, 0x00])
 
 
-def announce_flag():
-    while True:
-        time.sleep(2)
-        if not doors_locked:
-            bus.send_text(FLAG_ID, flag)
-
-
 threading.Thread(target=rotate_session, daemon=True).start()
-threading.Thread(target=announce_flag, daemon=True).start()
 vcan.transmit_periodically(bus, STATUS_ID, status, hz=1)
 vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
 vcan.transmit_periodically(bus, 0x3C1, lambda: bytes([0x5A, 0x00, 0x44, 0x00]), hz=2)
