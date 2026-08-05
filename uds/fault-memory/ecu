@@ -1,0 +1,113 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import isotp
+import vcan
+
+REQUEST_ID = 0x7E0
+RESPONSE_ID = 0x7E8
+
+CLEAR_DIAGNOSTIC_INFORMATION = 0x14
+READ_DTC_INFORMATION = 0x19
+ROUTINE_CONTROL = 0x31
+TESTER_PRESENT = 0x3E
+
+REPORT_BY_STATUS_MASK = 0x02
+START_ROUTINE = 0x01
+
+RELEASE_ROUTINE = 0x0203
+DTC_STATUS_CONFIRMED = 0x09
+DTC_AVAILABILITY_MASK = 0x7F
+
+NRC_SERVICE_NOT_SUPPORTED = 0x11
+NRC_SUB_FUNCTION_NOT_SUPPORTED = 0x12
+NRC_INCORRECT_LENGTH = 0x13
+NRC_CONDITIONS_NOT_CORRECT = 0x22
+NRC_REQUEST_OUT_OF_RANGE = 0x31
+
+# every controller records what it was asked to do and could not
+FAULT_INVALID_REQUEST = 0xC10A00
+FAULT_UNKNOWN_ROUTINE = 0xC10B00
+FAULT_SEQUENCE = 0xC10C00
+
+bus = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+fault_memory = {}
+
+vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+vcan.transmit_periodically(bus, 0x1A0, lambda: bytes([0, 0, 0, 0, 0, 0, 0, 0]), hz=5)
+
+
+def log_fault(code):
+    fault_memory[code] = DTC_STATUS_CONFIRMED
+
+
+def read_dtc_information(request):
+    if len(request) != 3 or request[1] != REPORT_BY_STATUS_MASK:
+        log_fault(FAULT_INVALID_REQUEST)
+        return bytes([0x7F, request[0], NRC_SUB_FUNCTION_NOT_SUPPORTED])
+    records = b""
+    for code, status in sorted(fault_memory.items()):
+        if status & request[2]:
+            records += code.to_bytes(3, "big") + bytes([status])
+    return bytes([0x59, REPORT_BY_STATUS_MASK, DTC_AVAILABILITY_MASK]) + records
+
+
+def clear_diagnostic_information(request):
+    if len(request) != 4:
+        log_fault(FAULT_INVALID_REQUEST)
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    group = int.from_bytes(request[1:4], "big")
+    if group != 0xFFFFFF:
+        log_fault(FAULT_INVALID_REQUEST)
+        return bytes([0x7F, request[0], NRC_REQUEST_OUT_OF_RANGE])
+    fault_memory.clear()
+    return bytes([0x54])
+
+
+def routine_control(request):
+    if len(request) != 4 or request[1] != START_ROUTINE:
+        log_fault(FAULT_INVALID_REQUEST)
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+
+    routine = request[2] << 8 | request[3]
+    if routine != RELEASE_ROUTINE:
+        log_fault(FAULT_UNKNOWN_ROUTINE)
+        return bytes([0x7F, request[0], NRC_REQUEST_OUT_OF_RANGE])
+
+    # the interlock the whole challenge turns on: a controller that has
+    # recorded faults will not run a release routine
+    if fault_memory:
+        log_fault(FAULT_SEQUENCE)
+        return bytes([0x7F, request[0], NRC_CONDITIONS_NOT_CORRECT])
+
+    return bytes([0x71, request[1], request[2], request[3]]) + flag.encode()
+
+
+def handle(request):
+    if request[0] == TESTER_PRESENT:
+        return bytes([0x7E, 0x00])
+    if request[0] == READ_DTC_INFORMATION:
+        return read_dtc_information(request)
+    if request[0] == CLEAR_DIAGNOSTIC_INFORMATION:
+        return clear_diagnostic_information(request)
+    if request[0] == ROUTINE_CONTROL:
+        return routine_control(request)
+    log_fault(FAULT_INVALID_REQUEST)
+    return bytes([0x7F, request[0], NRC_SERVICE_NOT_SUPPORTED])
+
+
+frames = bus.frames()
+while True:
+    try:
+        request = isotp.recv(bus, REQUEST_ID, RESPONSE_ID, timeout=3600, frames=frames)
+    except TimeoutError:
+        continue
+    if not request:
+        continue
+    try:
+        isotp.send(bus, RESPONSE_ID, REQUEST_ID, handle(request), timeout=10, frames=frames)
+    except TimeoutError:
+        continue

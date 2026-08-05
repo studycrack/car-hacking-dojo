@@ -1,0 +1,15 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+BUTTON_ID = 0x0FF
+
+try:
+    bus = vcan.Bus("vcan0", timeout=3)
+except OSError:
+    sys.exit("press-fob: interface vcan0 is down (is the challenge running?)")
+
+bus.send(BUTTON_ID, bytes([0x01]))
+print("*click*  --  the key fob transmitted.")

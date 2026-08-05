@@ -1,0 +1,103 @@
+#!/run/dojo/bin/python3 -u
+import hashlib
+import hmac
+import random
+import sys
+import threading
+import time
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+COMMAND_ID = 0x1B0
+STATUS_ID = 0x1B1
+BUTTON_ID = 0x0FF
+FLAG_ID = 0x7C0
+
+LOCK = b"\x01\x00"
+UNLOCK = b"\x02\xff"
+
+RESULT_IDLE = 0x00
+RESULT_ACCEPTED = 0x01
+RESULT_BAD_MAC = 0x02
+RESULT_STALE_FRESHNESS = 0x03
+
+KEY = bytes.fromhex("8b1d4f0a27c6e39544aa10b7c2d8e6f3")
+
+bus = vcan.Bus("vcan0")
+sender = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+freshness = random.randrange(0x20, 0x60)
+accepted_freshness = freshness - 1
+authentic = set()
+last_result = RESULT_IDLE
+locked = True
+state = threading.Lock()
+
+
+def authenticator(payload):
+    # the specification says to authenticate the payload, the identifier and
+    # the freshness value together; this build only got as far as the payload
+    return hmac.new(KEY, payload, hashlib.sha256).digest()[:3]
+
+
+def protected(payload, value):
+    return payload + bytes([value]) + authenticator(payload)
+
+
+def status():
+    with state:
+        return bytes([0x01 if locked else 0x00, accepted_freshness & 0xFF, last_result, 0x00])
+
+
+def transmit_lock():
+    global freshness
+    while True:
+        time.sleep(4)
+        with state:
+            value = freshness
+            freshness = (freshness + 1) & 0xFF
+            authentic.add(value)
+        sender.send(COMMAND_ID, protected(LOCK, value))
+
+
+def press_unlock():
+    global freshness
+    with state:
+        value = freshness
+        freshness = (freshness + 1) & 0xFF
+        authentic.add(value)
+    sender.send(COMMAND_ID, protected(UNLOCK, value))
+
+
+vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+vcan.transmit_periodically(bus, STATUS_ID, status, hz=2)
+threading.Thread(target=transmit_lock, daemon=True).start()
+
+for can_id, data in bus.frames():
+    if can_id == BUTTON_ID:
+        press_unlock()
+        continue
+
+    if can_id != COMMAND_ID or len(data) != 6:
+        continue
+
+    payload, value, mac = data[0:2], data[2], data[3:6]
+
+    if mac != authenticator(payload):
+        with state:
+            last_result = RESULT_BAD_MAC
+        continue
+
+    with state:
+        if not accepted_freshness < value <= accepted_freshness + 0x40:
+            last_result = RESULT_STALE_FRESHNESS
+            continue
+        accepted_freshness = value
+        last_result = RESULT_ACCEPTED
+        locked = payload == LOCK
+        forged = value not in authentic
+
+    if payload == UNLOCK and forged:
+        bus.send_text(FLAG_ID, flag)

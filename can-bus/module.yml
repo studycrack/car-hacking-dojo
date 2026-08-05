@@ -45,3 +45,7 @@ resources:
   - id: integrity
     type: challenge
     name: Beating the Checksum
+
+  - id: secoc
+    type: challenge
+    name: Authenticated Frames
