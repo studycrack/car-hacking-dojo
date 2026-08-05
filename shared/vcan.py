@@ -63,8 +63,12 @@ class Bus:
     def send_text(self, can_id, text, chunk_size=8, prefix=b""):
         payload = text.encode() if isinstance(text, str) else text
         chunk_size -= len(prefix)
-        for offset in range(0, len(payload), chunk_size):
-            self.send(can_id, prefix + payload[offset:offset + chunk_size])
+        lines = "".join(
+            format_frame(can_id, prefix + payload[offset:offset + chunk_size]) + "\n"
+            for offset in range(0, len(payload), chunk_size)
+        )
+        with self.send_lock:
+            self.sock.sendall(lines.encode())
 
     def frames(self):
         while True:

@@ -20,6 +20,9 @@ you would recover from a leaked DBC file, or from a firmware dump):
 
 That session counter is the entire extent of this car's security, and it is
 broadcast in the clear on the very bus you are attacking. It is rotated every
-fifteen seconds, so read it, then act on it.
+thirty seconds, so read it, then act on it.
 
-Unlock the doors, and the BCM will be pleased enough to tell you the flag.
+Unlock the doors, and the BCM will be pleased enough to tell you the flag ---
+on the bus, where it announces everything else. Keep a `candump` running in a
+second terminal while you work, or you will be talking to a car that is
+answering an empty room.
