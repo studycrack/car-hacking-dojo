@@ -45,18 +45,6 @@ def cluster_readout():
     return bytes([raw >> 8, raw & 0xFF, engine_rpm >> 8, engine_rpm & 0xFF, 0x00, 0x00, 0x00, 0x00])
 
 
-solved = False
-
-
-def announce_flag():
-    while True:
-        time.sleep(2)
-        if solved:
-            cluster.send_text(FLAG_ID, flag)
-
-
-threading.Thread(target=announce_flag, daemon=True).start()
-
 for can_id in noisy_ids:
     length = random.choice([2, 4, 8, 8])
     vcan.transmit_periodically(
@@ -84,6 +72,5 @@ for can_id, data in cluster.frames():
         continue
     on_target = sum(1 for _, value in window if value == TARGET_KPH * 100)
     if on_target >= REQUIRED_SHARE * len(window) and len(window) > HOLD_SECONDS * SENSOR_HZ * 4:
-        solved = True
         cluster.send_text(FLAG_ID, flag)
         window = []
