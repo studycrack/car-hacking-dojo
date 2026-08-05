@@ -38,6 +38,9 @@ ATT_READ_BY_GROUP_TYPE_REQ = 0x10
 ATT_READ_BY_GROUP_TYPE_RSP = 0x11
 ATT_WRITE_REQ = 0x12
 ATT_WRITE_RSP = 0x13
+ATT_HANDLE_VALUE_NTF = 0x1B
+ATT_HANDLE_VALUE_IND = 0x1D
+ATT_HANDLE_VALUE_CFM = 0x1E
 
 ERR_INVALID_HANDLE = 0x01
 ERR_READ_NOT_PERMITTED = 0x02
@@ -51,6 +54,11 @@ ERR_UNSUPPORTED_GROUP_TYPE = 0x10
 UUID_PRIMARY_SERVICE = 0x2800
 UUID_CHARACTERISTIC = 0x2803
 UUID_USER_DESCRIPTION = 0x2901
+UUID_CCCD = 0x2902
+
+CCCD_NONE = 0x0000
+CCCD_NOTIFY = 0x0001
+CCCD_INDICATE = 0x0002
 UUID_DEVICE_NAME = 0x2A00
 
 PROP_READ = 0x02
@@ -96,6 +104,9 @@ class Server:
         self.attributes = []
         self.next_handle = 1
         self.service_handle = None
+        self.subscriptions = {}
+        self.pending_indications = {}
+        self.on_subscribe = None
 
         self.add_service(0x1800)
         self.add_characteristic(UUID_DEVICE_NAME, name.encode(), PROP_READ)
@@ -124,6 +135,71 @@ class Server:
 
     def add_descriptor(self, uuid, value):
         return self._append(uuid, value)
+
+    def add_cccd(self, value_handle):
+        """The Client Characteristic Configuration Descriptor.
+
+        Notifications and indications are off until a client turns them on by
+        writing here: 0x0001 for notify, 0x0002 for indicate. The peripheral
+        keeps that choice per connection, which is why two clients can watch
+        the same characteristic in different ways.
+        """
+        def on_write(value, connection):
+            setting = int.from_bytes(value[:2], "little") if value else CCCD_NONE
+            self.subscriptions[(connection, value_handle)] = setting
+            if self.on_subscribe:
+                self.on_subscribe(value_handle, setting, connection)
+            return None
+
+        return self._append(UUID_CCCD, b"\x00\x00", writable=True, on_write=on_write)
+
+    def subscription(self, connection, value_handle):
+        return self.subscriptions.get((connection, value_handle), CCCD_NONE)
+
+    def notify(self, connection, value_handle, value):
+        if self.subscription(connection, value_handle) != CCCD_NOTIFY:
+            return False
+        self._send(connection, bytes([ATT_HANDLE_VALUE_NTF]) +
+                   struct.pack("<H", value_handle) + value[:DEFAULT_MTU - 3])
+        return True
+
+    def indicate(self, connection, value_handle, value):
+        """Queue an indication. Only one may be outstanding: the next goes out
+        when the client confirms the last, which is the whole difference from a
+        notification."""
+        if self.subscription(connection, value_handle) != CCCD_INDICATE:
+            return False
+        queue = self.pending_indications.setdefault(connection, [])
+        queue.append((value_handle, value[:DEFAULT_MTU - 3]))
+        if len(queue) == 1:
+            self._send_indication(connection)
+        return True
+
+    def notify_text(self, connection, value_handle, text, prefix=b""):
+        """Push a value too long for one PDU.
+
+        A notification carries at most MTU-3 bytes -- opcode and handle take
+        the rest -- so anything longer goes out in pieces, which is what a real
+        peripheral streaming a long value does.
+        """
+        payload = text.encode() if isinstance(text, str) else text
+        room = DEFAULT_MTU - 3 - len(prefix)
+        chunks = [payload[offset:offset + room] for offset in range(0, len(payload), room)]
+        return [prefix + chunk for chunk in chunks]
+
+    def _send_indication(self, connection):
+        queue = self.pending_indications.get(connection)
+        if not queue:
+            return
+        value_handle, value = queue[0]
+        self._send(connection, bytes([ATT_HANDLE_VALUE_IND]) +
+                   struct.pack("<H", value_handle) + value)
+
+    def _send(self, connection, pdu):
+        try:
+            connection.sendall(struct.pack("<H", len(pdu)) + pdu)
+        except OSError:
+            pass
 
     def find(self, handle):
         for attribute in self.attributes:
@@ -166,6 +242,13 @@ class Server:
             else:
                 attribute.value = value
             return bytes([ATT_WRITE_RSP])
+
+        if opcode == ATT_HANDLE_VALUE_CFM:
+            queue = self.pending_indications.get(connection)
+            if queue:
+                queue.pop(0)
+                self._send_indication(connection)
+            return None
 
         if opcode == ATT_READ_BLOB_REQ:
             handle, offset = struct.unpack("<HH", pdu[1:5])
@@ -292,11 +375,21 @@ class Client:
                 if time.time() > deadline:
                     raise
                 time.sleep(0.05)
+        self.events = []
 
     def request(self, pdu):
         self.sock.sendall(struct.pack("<H", len(pdu)) + pdu)
-        header = self._recv_exactly(2)
-        (length,) = struct.unpack("<H", header)
+        while True:
+            response = self._read_pdu()
+            # a peripheral may push a notification at any moment, including
+            # between your request and its answer; it is not the answer
+            if response[0] in (ATT_HANDLE_VALUE_NTF, ATT_HANDLE_VALUE_IND):
+                self.events.append(response)
+                continue
+            return response
+
+    def _read_pdu(self):
+        (length,) = struct.unpack("<H", self._recv_exactly(2))
         return self._recv_exactly(length)
 
     def _recv_exactly(self, count):
@@ -405,6 +498,39 @@ class Client:
             if not body:
                 break
         return found
+
+    def subscribe(self, cccd_handle, indicate=False):
+        return self.write(cccd_handle, struct.pack("<H", CCCD_INDICATE if indicate else CCCD_NOTIFY))
+
+    def confirm(self):
+        self.sock.sendall(struct.pack("<HB", 1, ATT_HANDLE_VALUE_CFM))
+
+    def events_stream(self, timeout=5.0, confirm=True):
+        """Yield (handle, value) as the peripheral pushes them.
+
+        An indication is answered with a confirmation unless the caller asks
+        otherwise; a peripheral that never gets one never sends the next.
+        """
+        deadline = time.time() + timeout
+        while True:
+            while self.events:
+                pdu = self.events.pop(0)
+                if pdu[0] == ATT_HANDLE_VALUE_IND and confirm:
+                    self.confirm()
+                yield struct.unpack("<H", pdu[1:3])[0], pdu[3:]
+                deadline = time.time() + timeout
+            remaining = deadline - time.time()
+            if remaining <= 0:
+                return
+            self.sock.settimeout(remaining)
+            try:
+                pdu = self._read_pdu()
+            except (socket.timeout, TimeoutError):
+                return
+            finally:
+                self.sock.settimeout(None)
+            if pdu[0] in (ATT_HANDLE_VALUE_NTF, ATT_HANDLE_VALUE_IND):
+                self.events.append(pdu)
 
     def close(self):
         self.sock.close()

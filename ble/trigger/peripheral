@@ -1,0 +1,30 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "9d:35:c8:02:77:1e"
+
+flag = open("/flag").read().strip()
+
+# the keyless module answers a challenge, once, to whoever asked for it
+server = ble.Server(ADDRESS, "BCM-Keyless")
+server.add_service(0xFF00)
+
+response = server.add_characteristic(0xFF02, b"", ble.PROP_NOTIFY)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"challenge response")
+server.add_cccd(response.handle)
+
+
+def on_request(value, connection):
+    # sent to whoever is subscribed at this instant, and to nobody else
+    for chunk in server.notify_text(connection, response.handle, flag):
+        server.notify(connection, response.handle, chunk)
+    return None
+
+
+server.add_characteristic(0xFF01, b"", ble.PROP_WRITE, on_write=on_request)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"write to request a challenge")
+
+server.run()

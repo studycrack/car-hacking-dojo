@@ -1,0 +1,33 @@
+#!/run/dojo/bin/python3 -u
+import random
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "3f:82:5e:11:a0:96"
+
+flag = open("/flag").read().strip()
+size = 8
+pieces = [flag[offset:offset + size] for offset in range(0, len(flag), size)]
+# the order they leave the peripheral in is not the order they belong in
+order = list(range(len(pieces)))
+random.Random(0x5EED).shuffle(order)
+
+# the telematics unit streams its journey log a fragment at a time
+server = ble.Server(ADDRESS, "Telematics-TCU")
+server.add_service(0xFF00)
+journey = server.add_characteristic(0xFF01, b"", ble.PROP_NOTIFY)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"journey log stream")
+server.add_cccd(journey.handle)
+
+
+def on_subscribe(value_handle, setting, connection):
+    if value_handle != journey.handle or setting != ble.CCCD_NOTIFY:
+        return
+    for index in order:
+        server.notify(connection, journey.handle, bytes([index]) + pieces[index].encode())
+
+
+server.on_subscribe = on_subscribe
+server.run()

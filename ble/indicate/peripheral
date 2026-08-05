@@ -1,0 +1,29 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "aa:7c:19:d0:63:41"
+
+flag = open("/flag").read().strip()
+size = 12
+pieces = [flag[offset:offset + size] for offset in range(0, len(flag), size)]
+
+# the immobiliser's audit log: every record has to be acknowledged, because a
+# record the phone never received is a record that did not reach anyone
+server = ble.Server(ADDRESS, "Immobiliser-9F")
+server.add_service(0xFF00)
+audit = server.add_characteristic(0xFF01, b"", ble.PROP_INDICATE)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"audit log, acknowledged delivery")
+server.add_cccd(audit.handle)
+
+
+def on_subscribe(value_handle, setting, connection):
+    if value_handle == audit.handle and setting == ble.CCCD_INDICATE:
+        for piece in pieces:
+            server.indicate(connection, audit.handle, piece.encode())
+
+
+server.on_subscribe = on_subscribe
+server.run()

@@ -48,3 +48,26 @@ resources:
   - id: sequence
     type: challenge
     name: An Interlock That Counts
+
+  - type: header
+    content: Events
+
+  - id: notify
+    type: challenge
+    name: Subscribing for Pushes
+
+  - id: indicate
+    type: challenge
+    name: Acknowledged Delivery
+
+  - id: stream
+    type: challenge
+    name: Reassembling a Stream
+
+  - id: trigger
+    type: challenge
+    name: Subscribe, Then Ask
+
+  - id: hidden-notify
+    type: challenge
+    name: A Property That Lies

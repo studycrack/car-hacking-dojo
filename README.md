@@ -28,8 +28,13 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `fragments` | reassembling a record split across services, in index order rather than handle order | 25m |
 | | `unlock` | writing to a characteristic, and reading the permission error when you write to the wrong one | 25m |
 | | `sequence` | driving a stateful interlock that resets on a wrong step | 30m |
+| | `notify` | enabling pushes by writing the CCCD, then listening | 20m |
+| | `indicate` | indications are acknowledged, and stop until you confirm | 25m |
+| | `stream` | reassembling notifications that arrive out of order | 25m |
+| | `trigger` | subscribing before triggering, because a push has no queue | 20m |
+| | `hidden-notify` | a declaration's properties are firmware's intent, not the stack's rule | 25m |
 
-Roughly **twelve hours** of hands-on time for a student comfortable with Linux
+Roughly **fourteen hours** of hands-on time for a student comfortable with Linux
 and Python; budget half again as long for one who is not. The modules are
 independent of each other, but within a module the challenges assume the
 earlier ones --- `rolling-code` expects the capture discipline `fob-capture`

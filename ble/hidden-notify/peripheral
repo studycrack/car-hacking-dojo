@@ -1,0 +1,30 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "72:e4:1b:8a:55:c0"
+
+flag = open("/flag").read().strip()
+
+# the dongle's declaration says read-only; the firmware disagrees
+server = ble.Server(ADDRESS, "OBDLink-4C21")
+server.add_service(0xFFF0)
+server.add_characteristic(0xFFF1, b"ELM327 v1.5", ble.PROP_READ)
+debug = server.add_characteristic(0xFFF2, b"debug channel idle", ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"debug channel")
+server.add_cccd(debug.handle)
+
+
+def on_subscribe(value_handle, setting, connection):
+    if value_handle != debug.handle:
+        return
+    # nothing in the declaration promised this would work
+    if setting == ble.CCCD_NOTIFY:
+        for chunk in server.notify_text(connection, debug.handle, flag):
+            server.notify(connection, debug.handle, chunk)
+
+
+server.on_subscribe = on_subscribe
+server.run()

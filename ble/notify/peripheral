@@ -1,0 +1,29 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "e6:0b:44:91:2c:7d"
+
+flag = open("/flag").read().strip()
+
+# the tyre pressure gateway pushes a reading whenever a sensor reports
+server = ble.Server(ADDRESS, "TPMS-Gateway")
+server.add_service(0x181A)
+server.add_characteristic(0x2A6D, bytes([0x40, 0x8B, 0x03, 0x00]), ble.PROP_READ)
+server.add_service(0xFF00)
+alerts = server.add_characteristic(0xFF01, b"", ble.PROP_READ | ble.PROP_NOTIFY)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"pressure alerts")
+server.add_cccd(alerts.handle)
+
+
+def on_subscribe(value_handle, setting, connection):
+    if value_handle != alerts.handle or setting != ble.CCCD_NOTIFY:
+        return
+    for chunk in server.notify_text(connection, alerts.handle, flag):
+        server.notify(connection, alerts.handle, chunk)
+
+
+server.on_subscribe = on_subscribe
+server.run()
