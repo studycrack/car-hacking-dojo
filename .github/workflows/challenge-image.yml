@@ -1,0 +1,36 @@
+name: challenge image
+
+# Builds the image the dojo runs its challenges in and publishes it to this
+# repository's container registry. No secrets to configure: the token GitHub
+# hands the job is enough to write a package owned by the same repository.
+#
+# The package starts out private. Make it public once, under the repository's
+# Packages page, or the platform's pull worker cannot fetch it.
+
+on:
+  push:
+    paths:
+      - image/**
+      - .github/workflows/challenge-image.yml
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: image
+          push: true
+          tags: ghcr.io/${{ github.repository }}/challenge-can:v1
