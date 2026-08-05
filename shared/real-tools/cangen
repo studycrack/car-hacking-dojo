@@ -1,0 +1,4 @@
+#!/bin/sh
+# The real can-utils cangen. The dojo's bus is a unix socket rather than a vcan
+# netdevice, so the shim in the challenge image rewrites the socket calls.
+exec env LD_PRELOAD=/opt/canshim.so /usr/bin/cangen "$@"

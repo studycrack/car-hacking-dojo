@@ -55,17 +55,27 @@ are running.
 
 The dojo puts `/run/challenge/bin` ahead of everything else on `PATH`, so a
 challenge keeps using the repository's python tools for as long as its `bin/`
-symlinks are there. Switching one challenge over means replacing them:
+symlinks point at `shared/tools`. Switching one challenge over means pointing
+them at `shared/real-tools` instead:
 
 ```bash
 cd can-bus/sniffing/bin
 rm candump cansend
-ln -s /opt/can-wrappers/candump candump
-ln -s /opt/can-wrappers/cansend cansend
+ln -s ../../../shared/real-tools/candump candump
+ln -s ../../../shared/real-tools/cansend cansend
 ```
 
 That makes the migration challenge-by-challenge and trivially reversible --
-restore the symlinks and the challenge is back on the python tools.
+point the symlinks back at `shared/tools` and the challenge is on the python
+tools again.
+
+**Do not symlink to `/opt` directly.** `dojo_clone` runs `_assert_no_symlinks`
+over the whole repository and refuses anything that resolves outside it, so a
+symlink into the image rejects the entire dojo update (and rolls it back). The
+wrappers therefore live in `shared/real-tools/` as ordinary files in the
+repository, and it is those that set `LD_PRELOAD` and exec the real binary.
+`/opt/can-wrappers/` in the image does the same thing and is there for use
+inside the container, but nothing in the repository may point at it.
 
 ## What the image does not solve
 

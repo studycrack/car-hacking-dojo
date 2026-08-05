@@ -5,7 +5,7 @@ name: Car Hacking
 award:
   emoji: 🚗
 
-image: pwncollege/challenge-simple
+image: ghcr.io/studycrack/car-hacking-dojo/challenge-can:v1
 
 modules:
   - id: can-bus
