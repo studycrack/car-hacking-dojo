@@ -1,4 +1,4 @@
-A real car is far louder than the last challenge suggested. A mid-range sedan
+A real car is far louder than that first dump suggested. A mid-range sedan
 puts something on the order of two thousand frames per second on its
 powertrain bus, spread across dozens of identifiers. Scrolling past that with
 your eyes is not analysis.

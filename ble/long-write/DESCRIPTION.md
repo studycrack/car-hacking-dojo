@@ -1,5 +1,7 @@
-You have already met the read side of this. A Read Response carries at most
-MTU-1 bytes, so a longer value comes back in pieces with Read Blob.
+Reading has this problem and you have never had to notice. A Read Response
+carries at most MTU-1 bytes, so every value longer than that has been arriving
+in pieces, gathered up with Read Blob requests your client sent on your behalf
+without mentioning it.
 
 Writing has the same problem and a different answer. There is no
 `Write Blob` --- instead the client queues the pieces and then commits them:

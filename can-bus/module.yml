@@ -36,13 +36,13 @@ resources:
   - type: header
     content: "Replaying and forging: two things to combine, not one to follow"
 
-  - id: rolling-code
-    type: challenge
-    name: Rolling Codes
-
   - id: injection
     type: challenge
     name: Forging Frames
+
+  - id: rolling-code
+    type: challenge
+    name: Rolling Codes
 
   - type: header
     content: "Working out what the bytes mean, without a database and with one"

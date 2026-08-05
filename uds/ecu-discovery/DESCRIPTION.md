@@ -1,4 +1,4 @@
-The previous challenge told you that the engine controller lives at `0x7E0`.
+You were told that the engine controller lives at `0x7E0`.
 On a car you have never seen before, nobody tells you that.
 
 ISO 15765-4 reserves `0x7E0` through `0x7E7` for diagnostic requests, with

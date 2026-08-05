@@ -1,5 +1,5 @@
-In the last challenge you were handed the message layout. In the field, nobody
-hands you the message layout. Identifiers and byte offsets are specific to a
+When you unlocked the doors you were handed the message layout. In the field
+nobody hands it to you. Identifiers and byte offsets are specific to a
 manufacturer, a model, and often a model year, and they are not published.
 
 So you reverse engineer them, by correlating something you can *see* with

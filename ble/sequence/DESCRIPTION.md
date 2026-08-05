@@ -1,4 +1,4 @@
-A single write unlocked the last one. Anything that matters is usually guarded
+A single write opened the vault. Anything that matters is usually guarded
 by more than a single write.
 
 This is the immobiliser. It will not disarm on one command, because a stray

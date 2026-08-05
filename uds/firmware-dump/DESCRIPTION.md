@@ -23,9 +23,9 @@ Three things stand between you and a dump.
 
 **Where is the memory?** You get `requestOutOfRange` for anything outside the
 mapped region. Guessing across a 32-bit space is hopeless, so do what you did
-two challenges ago and ask the ECU what it is: identification record `0xF18C`
-names the part, and the part names its own memory map. Cortex-M flash does not
-move around.
+when you enumerated the controllers, and ask this one what it is: identification
+record `0xF18C` names the part, and the part names its own memory map. Cortex-M
+flash does not move around.
 
 **How much at a time?** More than a controller wants to put on the wire in one
 response gets refused. Find the ceiling and write a loop --- this is a dump, not

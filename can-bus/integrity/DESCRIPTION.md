@@ -1,4 +1,4 @@
-The car you spoofed in the last challenge believed whatever arrived. Plenty of
+The instrument cluster you lied to believed whatever arrived. Plenty of
 cars on the road still do. Newer ones increasingly do not.
 
 The countermeasure is not cryptography --- there is no room for a signature in
