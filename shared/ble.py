@@ -19,6 +19,7 @@ import os
 import selectors
 import socket
 import struct
+import threading
 import time
 
 SOCKET_DIR = "/run/bluetooth"
@@ -56,6 +57,26 @@ UUID_CHARACTERISTIC = 0x2803
 UUID_USER_DESCRIPTION = 0x2901
 UUID_CCCD = 0x2902
 
+AD_FLAGS = 0x01
+AD_INCOMPLETE_UUID16 = 0x02
+AD_COMPLETE_UUID16 = 0x03
+AD_SHORTENED_NAME = 0x08
+AD_COMPLETE_NAME = 0x09
+AD_SERVICE_DATA_UUID16 = 0x16
+AD_MANUFACTURER = 0xFF
+
+AD_TYPE_NAMES = {
+    AD_FLAGS: "Flags",
+    AD_INCOMPLETE_UUID16: "Incomplete 16-bit Service UUIDs",
+    AD_COMPLETE_UUID16: "Complete 16-bit Service UUIDs",
+    AD_SHORTENED_NAME: "Shortened Local Name",
+    AD_COMPLETE_NAME: "Complete Local Name",
+    AD_SERVICE_DATA_UUID16: "Service Data - 16-bit UUID",
+    AD_MANUFACTURER: "Manufacturer Specific Data",
+}
+
+ADVERTISING_MAX = 31
+
 CCCD_NONE = 0x0000
 CCCD_NOTIFY = 0x0001
 CCCD_INDICATE = 0x0002
@@ -78,6 +99,53 @@ def advertising_path(address):
     return device_path(address) + ".adv"
 
 
+class Advertisement:
+    """One advertising payload.
+
+    A payload is a sequence of AD structures, each a length byte, a type byte,
+    and its data. There are thirty-one bytes for the lot, which is the single
+    most consequential number in BLE advertising: it is why beacons carry
+    almost nothing, and why anything larger needs the scan response as well.
+    """
+
+    def __init__(self):
+        self.structures = []
+
+    def add(self, ad_type, data):
+        self.structures.append((ad_type, bytes(data)))
+        return self
+
+    def add_name(self, name, complete=True):
+        return self.add(AD_COMPLETE_NAME if complete else AD_SHORTENED_NAME, name.encode())
+
+    def add_manufacturer(self, company, data):
+        return self.add(AD_MANUFACTURER, struct.pack("<H", company) + bytes(data))
+
+    def add_service_data(self, uuid, data):
+        return self.add(AD_SERVICE_DATA_UUID16, struct.pack("<H", uuid) + bytes(data))
+
+    def encode(self):
+        payload = b""
+        for ad_type, data in self.structures:
+            payload += bytes([len(data) + 1, ad_type]) + data
+        if len(payload) > ADVERTISING_MAX:
+            raise ValueError(f"advertising payload is {len(payload)} bytes, "
+                             f"the air allows {ADVERTISING_MAX}")
+        return payload
+
+    @staticmethod
+    def parse(payload):
+        structures = []
+        offset = 0
+        while offset < len(payload):
+            length = payload[offset]
+            if length == 0 or offset + 1 + length > len(payload):
+                break
+            structures.append((payload[offset + 1], payload[offset + 2:offset + 1 + length]))
+            offset += 1 + length
+        return structures
+
+
 class Attribute:
     def __init__(self, handle, uuid, value=b"", readable=True, writable=False, on_write=None):
         self.handle = handle
@@ -96,17 +164,21 @@ class Server:
     followed by its value, followed by any descriptors.
     """
 
-    def __init__(self, address, name, advertising=None):
+    def __init__(self, address, name, advertising=None, scan_response=None):
         self.address = address
         self.name = name
-        self.advertising = dict(advertising or {})
-        self.advertising.setdefault("name", name)
+        if advertising is None:
+            advertising = Advertisement().add(AD_FLAGS, b"\x06").add_name(name)
+        self.advertising = advertising
+        self.scan_response = scan_response
         self.attributes = []
         self.next_handle = 1
         self.service_handle = None
         self.subscriptions = {}
         self.pending_indications = {}
         self.on_subscribe = None
+        self.rotation = None
+        self.rotation_period = 0.4
 
         self.add_service(0x1800)
         self.add_characteristic(UUID_DEVICE_NAME, name.encode(), PROP_READ)
@@ -312,12 +384,37 @@ class Server:
         return (min(following) - 1) if following else self.attributes[-1].handle
 
     def advertise(self):
+        """Put the payloads where a scanner can see them.
+
+        The advertisement goes out unprompted; the scan response only exists
+        because a scanner asked for it, which is the difference between a
+        passive and an active scan.
+        """
         os.makedirs(SOCKET_DIR, exist_ok=True)
-        lines = "".join(f"{key}={value}\n" for key, value in self.advertising.items())
+        lines = f"adv={self.advertising.encode().hex()}\n"
+        if self.scan_response is not None:
+            lines += f"rsp={self.scan_response.encode().hex()}\n"
         path = advertising_path(self.address)
         with open(path, "w") as handle:
             handle.write(lines)
         os.chmod(path, 0o644)
+
+    def _rotate(self):
+        """Re-advertise on a cycle.
+
+        Thirty-one bytes is a hard ceiling, so anything larger than a payload
+        goes out as a sequence of payloads instead -- which is what a beacon
+        with more to say than fits actually does. A scanner that looks once
+        sees one of them.
+        """
+        index = 0
+        while True:
+            payloads = self.rotation(index)
+            self.advertising = payloads[0]
+            self.scan_response = payloads[1] if len(payloads) > 1 else None
+            self.advertise()
+            index += 1
+            time.sleep(self.rotation_period)
 
     def run(self):
         os.makedirs(SOCKET_DIR, exist_ok=True)
@@ -329,6 +426,8 @@ class Server:
         os.chmod(path, 0o666)
         server.listen(8)
         self.advertise()
+        if self.rotation:
+            threading.Thread(target=self._rotate, daemon=True).start()
 
         selector = selectors.DefaultSelector()
         selector.register(server, selectors.EVENT_READ, None)
@@ -552,7 +651,13 @@ class ATTError(Exception):
         super().__init__(self.NAMES.get(code, f"ATT error 0x{code:02X}"))
 
 
-def scan():
+def scan(active=True):
+    """Report what is advertising.
+
+    A passive scan hears only what a peripheral broadcasts on its own. An
+    active scan sends a scan request and gets a second payload back, which is
+    where a device puts what did not fit in the first thirty-one bytes.
+    """
     if not os.path.isdir(SOCKET_DIR):
         return []
     devices = []
@@ -567,5 +672,14 @@ def scan():
                 record[key] = value
         except OSError:
             continue
-        devices.append((address, record))
+        advertisement = bytes.fromhex(record.get("adv", ""))
+        response = bytes.fromhex(record.get("rsp", "")) if active and "rsp" in record else None
+        devices.append((address, advertisement, response))
     return devices
+
+
+def local_name(structures):
+    for ad_type, data in structures:
+        if ad_type in (AD_COMPLETE_NAME, AD_SHORTENED_NAME):
+            return data.decode(errors="replace")
+    return None

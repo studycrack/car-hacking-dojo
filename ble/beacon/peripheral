@@ -1,0 +1,27 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "5c:31:0e:b7:44:29"
+COMPANY = 0x0499
+
+flag = open("/flag").read().strip().encode()
+CHUNK = 16
+pieces = [flag[offset:offset + CHUNK] for offset in range(0, len(flag), CHUNK)]
+
+
+def rotate(index):
+    slot = index % len(pieces)
+    advertising = ble.Advertisement()
+    advertising.add(ble.AD_FLAGS, b"\x06")
+    advertising.add_manufacturer(COMPANY, bytes([slot]) + pieces[slot])
+    return (advertising,)
+
+
+server = ble.Server(ADDRESS, "TPMS-RR-9910")
+server.rotation = rotate
+server.add_service(0x181A)
+server.add_characteristic(0x2A6D, bytes([0x40, 0x8B, 0x03, 0x00]), ble.PROP_READ)
+server.run()

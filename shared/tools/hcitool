@@ -6,19 +6,22 @@ import ble
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] != "lescan":
-        sys.exit("usage: hcitool lescan")
+    arguments = sys.argv[1:]
+    if not arguments or arguments[0] != "lescan":
+        sys.exit("usage: hcitool lescan [--passive]\n"
+                 "   a passive scan sends no scan request, so it never sees a scan response")
 
-    devices = ble.scan()
+    active = "--passive" not in arguments
+    devices = ble.scan(active=active)
     if not devices:
         sys.exit("hcitool: no peripherals are advertising (is the challenge running?)")
 
     print("LE Scan ...")
-    for address, record in devices:
-        print(f"{address} {record.get('name', '(unknown)')}")
-        for key, value in record.items():
-            if key != "name":
-                print(f"{address} {key}: {value}")
+    for address, advertisement, response in devices:
+        structures = ble.Advertisement.parse(advertisement)
+        if response:
+            structures += ble.Advertisement.parse(response)
+        print(f"{address} {ble.local_name(structures) or '(unknown)'}")
 
 
 if __name__ == "__main__":

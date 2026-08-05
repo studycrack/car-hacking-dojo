@@ -1,0 +1,30 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "7e:12:9f:40:aa:31"
+SERVICE = 0xFD6F
+
+flag = open("/flag").read().strip().encode()
+CHUNK = 14
+pieces = [flag[offset:offset + CHUNK] for offset in range(0, len(flag), CHUNK)]
+
+
+def rotate(index):
+    slot = index % len(pieces)
+    advertising = ble.Advertisement()
+    advertising.add(ble.AD_FLAGS, b"\x06")
+    advertising.add(ble.AD_COMPLETE_UUID16, bytes([SERVICE & 0xFF, SERVICE >> 8]))
+    # the payload of a service data structure begins with its UUID, not with
+    # the data; a parser that forgets gets two bytes of rubbish per fragment
+    advertising.add_service_data(SERVICE, bytes([slot]) + pieces[slot])
+    return (advertising,)
+
+
+server = ble.Server(ADDRESS, "TrackTag-7")
+server.rotation = rotate
+server.add_service(0xFF00)
+server.add_characteristic(0xFF01, b"tracking", ble.PROP_READ)
+server.run()

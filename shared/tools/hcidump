@@ -1,0 +1,54 @@
+#!/run/dojo/bin/python3 -u
+"""Show the advertising reports a scan produces, structure by structure.
+
+`hcitool lescan` prints a name. Everything else a peripheral broadcasts --
+manufacturer data, service data, the flags -- is in the payload, and this is
+what shows you the payload.
+"""
+import argparse
+import sys
+import time
+
+sys.path.insert(0, "/challenge")
+import ble
+
+
+def dump(label, payload):
+    print(f"    {label}: {len(payload)} of {ble.ADVERTISING_MAX} bytes")
+    for ad_type, data in ble.Advertisement.parse(payload):
+        name = ble.AD_TYPE_NAMES.get(ad_type, "Unknown")
+        print(f"      type 0x{ad_type:02x} ({name}), {len(data)} bytes")
+        print(f"        {data.hex()}")
+        print(f"        '{''.join(chr(b) if 0x20 <= b < 0x7F else '.' for b in data)}'")
+
+
+def main():
+    parser = argparse.ArgumentParser(usage="hcidump [--passive] [-n COUNT] [-w SECONDS]")
+    parser.add_argument("--passive", action="store_true",
+                        help="send no scan request, so no scan response comes back")
+    parser.add_argument("-n", "--count", type=int, default=1,
+                        help="report this many times (advertising is a repeating broadcast)")
+    parser.add_argument("-w", "--wait", type=float, default=1.0,
+                        help="seconds between reports")
+    arguments = parser.parse_args()
+
+    for round_number in range(arguments.count):
+        devices = ble.scan(active=not arguments.passive)
+        if not devices:
+            sys.exit("hcidump: nothing is advertising (is the challenge running?)")
+        for address, advertisement, response in devices:
+            print(f"> LE Advertising Report  {address}")
+            dump("ADV_IND", advertisement)
+            if response:
+                dump("SCAN_RSP", response)
+            elif arguments.passive:
+                print("    SCAN_RSP: not requested (passive scan)")
+        if round_number + 1 < arguments.count:
+            time.sleep(arguments.wait)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (KeyboardInterrupt, BrokenPipeError):
+        pass

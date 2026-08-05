@@ -1,0 +1,37 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "b3:6a:27:cd:15:82"
+COMPANY = 0x004C
+
+flag = open("/flag").read().strip().encode()
+half = len(flag) // 2
+CHUNK = 12
+# the front half stops at the halfway mark: a chunk that runs past it would be
+# broadcast twice, once in each payload
+front = [flag[offset:min(offset + CHUNK, half)] for offset in range(0, half, CHUNK)]
+back = [flag[offset:offset + CHUNK] for offset in range(half, len(flag), CHUNK)]
+
+
+def rotate(index):
+    advertising = ble.Advertisement()
+    advertising.add(ble.AD_FLAGS, b"\x06")
+    advertising.add_name("KeyFob", complete=False)
+    slot = index % len(front)
+    advertising.add_manufacturer(COMPANY, bytes([slot]) + front[slot])
+
+    # the half that never goes out unprompted
+    response = ble.Advertisement()
+    slot = index % len(back)
+    response.add_manufacturer(COMPANY, bytes([len(front) + slot]) + back[slot])
+    return advertising, response
+
+
+server = ble.Server(ADDRESS, "KeyFob-BLE")
+server.rotation = rotate
+server.add_service(0xFF00)
+server.add_characteristic(0xFF01, b"paired", ble.PROP_READ)
+server.run()

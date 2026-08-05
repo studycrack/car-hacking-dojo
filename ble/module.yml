@@ -71,3 +71,18 @@ resources:
   - id: hidden-notify
     type: challenge
     name: A Property That Lies
+
+  - type: header
+    content: Advertising
+
+  - id: beacon
+    type: challenge
+    name: Reading the Broadcast
+
+  - id: scan-response
+    type: challenge
+    name: Asking to Be Told More
+
+  - id: service-data
+    type: challenge
+    name: Typed Advertising Data

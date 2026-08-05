@@ -33,8 +33,11 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `stream` | reassembling notifications that arrive out of order | 25m |
 | | `trigger` | subscribing before triggering, because a push has no queue | 20m |
 | | `hidden-notify` | a declaration's properties are firmware's intent, not the stack's rule | 25m |
+| | `beacon` | parsing AD structures out of a broadcast nobody has to connect to | 25m |
+| | `scan-response` | the second payload a peripheral only sends when asked, and what asking costs | 25m |
+| | `service-data` | AD structures are typed, and the type says where the data starts | 20m |
 
-Roughly **fourteen hours** of hands-on time for a student comfortable with Linux
+Roughly **fifteen hours** of hands-on time for a student comfortable with Linux
 and Python; budget half again as long for one who is not. The modules are
 independent of each other, but within a module the challenges assume the
 earlier ones --- `rolling-code` expects the capture discipline `fob-capture`
@@ -77,6 +80,12 @@ needs `CAP_NET_ADMIN` too. So `shared/ble.py` supplies the radio's absence in
 the same shape as the CAN hub: each peripheral listens on a unix socket named
 after its address under `/run/bluetooth/`, and writes its advertising data
 beside it so a scan can see it without connecting.
+
+Advertising is real too: `Advertisement` builds AD structures -- length, type,
+data -- and refuses a payload over the thirty-one bytes the air allows, which
+is why anything larger than that goes out as a rotating sequence of payloads
+the way a real beacon does. A scan reads the advertisement, and reads the scan
+response only when it is active.
 
 Above that it is the real protocol. The PDUs are the ATT opcodes from the
 Bluetooth Core Specification -- Read, Read Blob, Write, Find Information, Read
