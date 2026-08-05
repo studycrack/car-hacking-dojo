@@ -5,18 +5,29 @@ signal reverse engineering, and the UDS diagnostic protocol.
 
 ## Modules
 
-| Module | Challenge | Skill |
-| --- | --- | --- |
-| The CAN Bus | `sniffing` | reading a bus with `candump` |
-| | `filtering` | identifier filters, payload structure |
-| | `fob-capture` | capturing a one-shot transmission: attach the capture before triggering the event |
-| | `injection` | forging frames with `cansend` against a live controller |
-| | `spoofing` | reverse engineering a signal's identifier, offset, and scale, then out-transmitting the real sensor |
-| | `integrity` | recovering an alive counter and checksum from captured traffic to forge frames a validating module accepts |
-| Diagnostics and UDS | `iso-tp` | segmentation and flow control, by hand |
-| | `ecu-discovery` | address and data-identifier enumeration |
-| | `security-access` | bypassing a SecurityAccess attempt limiter via session reset, then brute forcing a 16-bit key |
-| | `firmware-dump` | ReadMemoryByAddress: locating flash, probing the read ceiling, dumping it, and mining the image for an undocumented service |
+| Module | Challenge | Skill | Est. |
+| --- | --- | --- | --- |
+| The CAN Bus | `sniffing` | reading a bus with `candump` | 10m |
+| | `filtering` | identifier filters, payload structure | 20m |
+| | `fob-capture` | capturing a one-shot transmission: attach the capture before triggering the event | 15m |
+| | `rolling-code` | replaying a rolling code the receiver never consumed | 40m |
+| | `injection` | forging frames with `cansend` against a live controller | 25m |
+| | `spoofing` | reverse engineering a signal's identifier, offset, and scale, then out-transmitting the real sensor | 50m |
+| | `integrity` | recovering an alive counter and checksum from captured traffic to forge frames a validating module accepts | 55m |
+| Diagnostics and UDS | `iso-tp` | segmentation and flow control, by hand | 45m |
+| | `ecu-discovery` | address and data-identifier enumeration | 30m |
+| | `security-access` | bypassing a SecurityAccess attempt limiter via session reset, then brute forcing a 16-bit key | 45m |
+| | `firmware-dump` | ReadMemoryByAddress: locating flash, probing the read ceiling, dumping it, and mining the image for an undocumented service | 45m |
+| | `reflash` | the RequestDownload / TransferData / RequestTransferExit sequence, and patching a calibration block | 50m |
+| | `gateway` | reading a central gateway's routing table to reach a bus the OBD connector is not on | 40m |
+
+Roughly **eight hours** of hands-on time for a student comfortable with Linux
+and Python; budget half again as long for one who is not. The two modules are
+independent of each other, but within a module the challenges assume the
+earlier ones --- `rolling-code` expects the capture discipline `fob-capture`
+teaches, `integrity` expects the signal reverse engineering from `spoofing`,
+and `gateway` and `firmware-dump` both expect the enumeration from
+`ecu-discovery`.
 
 ## The bus is emulated in userspace
 

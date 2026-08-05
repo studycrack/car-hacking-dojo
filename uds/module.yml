@@ -34,3 +34,11 @@ resources:
   - id: firmware-dump
     type: challenge
     name: Dumping the Firmware
+
+  - id: reflash
+    type: challenge
+    name: Writing It Back
+
+  - id: gateway
+    type: challenge
+    name: Crossing the Gateway

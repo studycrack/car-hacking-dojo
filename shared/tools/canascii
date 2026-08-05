@@ -20,10 +20,7 @@ def main():
     parser.add_argument("can_id")
     args = parser.parse_args()
 
-    try:
-        bus = vcan.Bus(args.interface, timeout=3)
-    except OSError:
-        sys.exit(f"canascii: interface {args.interface} is down (is the challenge running?)")
+    bus = vcan.attach(args.interface, "canascii")
 
     wanted = int(args.can_id, 16)
     for can_id, data in bus.frames():

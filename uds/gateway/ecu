@@ -1,0 +1,121 @@
+#!/run/dojo/bin/python3 -u
+import sys
+import threading
+
+sys.path.insert(0, "/challenge")
+import isotp
+import vcan
+
+GATEWAY_REQUEST_ID = 0x710
+GATEWAY_RESPONSE_ID = 0x718
+IMMOBILIZER_REQUEST_ID = 0x6F2
+IMMOBILIZER_RESPONSE_ID = 0x6FA
+
+ROUTING_DID = 0xF1B0
+PART_DID = 0xF18C
+
+READ_DATA_BY_IDENTIFIER = 0x22
+ROUTINE_CONTROL = 0x31
+TESTER_PRESENT = 0x3E
+
+DISARM_ROUTINE = 0xC001
+
+NRC_SERVICE_NOT_SUPPORTED = 0x11
+NRC_INCORRECT_LENGTH = 0x13
+NRC_REQUEST_OUT_OF_RANGE = 0x31
+
+# request ids the gateway will carry from the diagnostic bus to the powertrain
+# bus; the immobilizer entry is a service-tool leftover that was never removed
+ROUTES = [0x7E0, 0x7E1, 0x7E2, IMMOBILIZER_REQUEST_ID]
+
+obd = vcan.Bus("vcan0")
+obd_forward = vcan.Bus("vcan0")
+powertrain = vcan.Bus("vcan1")
+powertrain_forward = vcan.Bus("vcan1")
+flag = open("/flag").read().strip()
+
+vcan.transmit_periodically(obd, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+vcan.transmit_periodically(powertrain, 0x0D2, lambda: bytes([0x11, 0x22, 0x33, 0x44]), hz=10)
+
+
+def gateway_records():
+    routing = b"".join(route.to_bytes(2, "big") for route in ROUTES)
+    return {
+        PART_DID: b"GW-3300-014 (central gateway)",
+        ROUTING_DID: b"OBD->PT " + routing,
+    }
+
+
+def serve_gateway(request):
+    if request[0] == TESTER_PRESENT:
+        return bytes([0x7E, 0x00])
+    if request[0] != READ_DATA_BY_IDENTIFIER:
+        return bytes([0x7F, request[0], NRC_SERVICE_NOT_SUPPORTED])
+    if len(request) != 3:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    did = request[1] << 8 | request[2]
+    records = gateway_records()
+    if did not in records:
+        return bytes([0x7F, request[0], NRC_REQUEST_OUT_OF_RANGE])
+    return bytes([0x62, request[1], request[2]]) + records[did]
+
+
+def serve_immobilizer(request):
+    if request[0] == TESTER_PRESENT:
+        return bytes([0x7E, 0x00])
+    if request[0] != ROUTINE_CONTROL:
+        return bytes([0x7F, request[0], NRC_SERVICE_NOT_SUPPORTED])
+    if len(request) != 4:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    if (request[2] << 8 | request[3]) != DISARM_ROUTINE:
+        return bytes([0x7F, request[0], NRC_REQUEST_OUT_OF_RANGE])
+    return bytes([0x71, request[1], request[2], request[3]]) + flag.encode()
+
+
+def run_gateway_diagnostics():
+    frames = obd.frames()
+    while True:
+        try:
+            request = isotp.recv(obd, GATEWAY_REQUEST_ID, GATEWAY_RESPONSE_ID, timeout=3600, frames=frames)
+        except TimeoutError:
+            continue
+        if request:
+            try:
+                isotp.send(obd, GATEWAY_RESPONSE_ID, GATEWAY_REQUEST_ID, serve_gateway(request),
+                           timeout=10, frames=frames)
+            except TimeoutError:
+                continue
+
+
+def run_immobilizer():
+    frames = powertrain.frames()
+    while True:
+        try:
+            request = isotp.recv(powertrain, IMMOBILIZER_REQUEST_ID, IMMOBILIZER_RESPONSE_ID,
+                                 timeout=3600, frames=frames)
+        except TimeoutError:
+            continue
+        if request:
+            try:
+                isotp.send(powertrain, IMMOBILIZER_RESPONSE_ID, IMMOBILIZER_REQUEST_ID,
+                           serve_immobilizer(request), timeout=10, frames=frames)
+            except TimeoutError:
+                continue
+
+
+def forward_to_powertrain():
+    for can_id, data in obd_forward.frames():
+        if can_id in ROUTES:
+            powertrain_forward.send(can_id, data)
+
+
+def forward_to_obd():
+    for can_id, data in powertrain_forward.frames():
+        if can_id - 8 in ROUTES:
+            obd_forward.send(can_id, data)
+
+
+for worker in (run_gateway_diagnostics, run_immobilizer, forward_to_powertrain, forward_to_obd):
+    threading.Thread(target=worker, daemon=True).start()
+
+threading.Event().wait()
