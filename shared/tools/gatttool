@@ -1,0 +1,97 @@
+#!/run/dojo/bin/python3 -u
+import argparse
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+PROPERTY_NAMES = [
+    (ble.PROP_READ, "READ"),
+    (ble.PROP_WRITE_NO_RESPONSE, "WRITE_NO_RESPONSE"),
+    (ble.PROP_WRITE, "WRITE"),
+    (ble.PROP_NOTIFY, "NOTIFY"),
+    (ble.PROP_INDICATE, "INDICATE"),
+]
+
+
+def describe(properties):
+    return ", ".join(name for bit, name in PROPERTY_NAMES if properties & bit) or "none"
+
+
+def full_uuid(short):
+    return f"0000{short:04x}-0000-1000-8000-00805f9b34fb"
+
+
+def connect(address):
+    try:
+        return ble.Client(address, timeout=3)
+    except OSError:
+        sys.exit(f"gatttool: connect error: {address} is not advertising")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        usage="gatttool -b ADDRESS [--primary | --characteristics | --char-desc |\n"
+              "                        --char-read -a HANDLE |\n"
+              "                        --char-write-req -a HANDLE -n HEX]")
+    parser.add_argument("-b", "--device", required=True, metavar="ADDRESS")
+    parser.add_argument("--primary", action="store_true")
+    parser.add_argument("--characteristics", action="store_true")
+    parser.add_argument("--char-desc", action="store_true")
+    parser.add_argument("--char-read", action="store_true")
+    parser.add_argument("--char-write-req", action="store_true")
+    parser.add_argument("-a", "--handle")
+    parser.add_argument("-n", "--value")
+    arguments = parser.parse_args()
+
+    client = connect(arguments.device)
+
+    if arguments.characteristics:
+        for declaration, properties, value_handle, uuid in client.characteristics():
+            print(f"handle = 0x{declaration:04x}, char properties = 0x{properties:02x}, "
+                  f"char value handle = 0x{value_handle:04x}, uuid = {full_uuid(uuid)}")
+        return
+
+    if arguments.char_desc:
+        for handle, uuid in client.attributes():
+            print(f"handle = 0x{handle:04x}, uuid = {full_uuid(uuid)}")
+        return
+
+    if arguments.primary:
+        for start, end, uuid in client.services():
+            print(f"attr handle = 0x{start:04x}, end grp handle = 0x{end:04x} "
+                  f"uuid: {full_uuid(uuid)}")
+        return
+
+    if arguments.char_read:
+        if not arguments.handle:
+            sys.exit("gatttool: --char-read needs -a HANDLE")
+        try:
+            value = client.read(int(arguments.handle, 0))
+        except ble.ATTError as error:
+            sys.exit(f"Characteristic value/descriptor read failed: {error}")
+        print("Characteristic value/descriptor: " + " ".join(f"{byte:02x}" for byte in value))
+        return
+
+    if arguments.char_write_req:
+        if not arguments.handle or arguments.value is None:
+            sys.exit("gatttool: --char-write-req needs -a HANDLE and -n HEX")
+        try:
+            payload = bytes.fromhex(arguments.value)
+        except ValueError:
+            sys.exit(f"gatttool: invalid hex value '{arguments.value}'")
+        try:
+            client.write(int(arguments.handle, 0), payload)
+        except ble.ATTError as error:
+            sys.exit(f"Characteristic Write Request failed: {error}")
+        print("Characteristic value was written successfully")
+        return
+
+    parser.print_usage()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (KeyboardInterrupt, BrokenPipeError):
+        pass

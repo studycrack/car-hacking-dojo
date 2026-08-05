@@ -10,3 +10,4 @@ image: ghcr.io/studycrack/car-hacking-dojo/challenge-can:v2
 modules:
   - id: can-bus
   - id: uds
+  - id: ble

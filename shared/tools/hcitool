@@ -1,0 +1,28 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] != "lescan":
+        sys.exit("usage: hcitool lescan")
+
+    devices = ble.scan()
+    if not devices:
+        sys.exit("hcitool: no peripherals are advertising (is the challenge running?)")
+
+    print("LE Scan ...")
+    for address, record in devices:
+        print(f"{address} {record.get('name', '(unknown)')}")
+        for key, value in record.items():
+            if key != "name":
+                print(f"{address} {key}: {value}")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass

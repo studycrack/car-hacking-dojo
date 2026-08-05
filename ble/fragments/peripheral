@@ -1,0 +1,30 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "f7:31:ad:59:80:b4"
+
+flag = open("/flag").read().strip()
+size = (len(flag) + 4) // 5
+pieces = [flag[offset:offset + size] for offset in range(0, len(flag), size)]
+while len(pieces) < 5:
+    pieces.append("")
+
+# four wheels and the spare, each holding one fifth of the record; the
+# ordering byte is the only thing saying which fifth, and it is not the order
+# the handles are in
+order = [3, 0, 4, 1, 2]
+
+server = ble.Server(ADDRESS, "TPMS-Gateway")
+for slot, index in enumerate(order):
+    server.add_service(0xFF00 + slot)
+    server.add_characteristic(0xFE00 + slot, bytes([0x20 + slot]), ble.PROP_READ)
+    server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"node rssi")
+    server.add_characteristic(0xFD00 + slot, bytes([index]), ble.PROP_READ)
+    server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"fragment index")
+    server.add_characteristic(0xFC00 + slot, pieces[index].encode(), ble.PROP_READ)
+    server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"fragment payload")
+
+server.run()

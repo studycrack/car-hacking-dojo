@@ -1,0 +1,42 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "b8:44:e1:07:2f:65"
+
+STEPS = [bytes([0x01]), bytes([0x02]), bytes([0x03])]
+
+flag = open("/flag").read().strip()
+
+# the immobiliser will not disarm unless the steps arrive in order
+server = ble.Server(ADDRESS, "Immobiliser-9F")
+server.add_service(0xFF00)
+
+progress = {"step": 0}
+
+
+def on_step(value, connection):
+    if value == STEPS[progress["step"]]:
+        progress["step"] += 1
+    else:
+        # an interlock that forgives a wrong step is not an interlock
+        progress["step"] = 0
+
+    if progress["step"] >= len(STEPS):
+        status.value = flag.encode()
+        progress["step"] = 0
+    else:
+        status.value = f"armed step {progress['step']}/3".encode()
+    return None
+
+
+server.add_characteristic(0xFF01, b"\x00", ble.PROP_WRITE, on_write=on_step)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"interlock step")
+status = server.add_characteristic(0xFF02, b"armed step 0/3", ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"interlock status")
+server.add_characteristic(0xFF03, b"steps 1,2,3 must arrive in order", ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"workshop manual extract")
+
+server.run()

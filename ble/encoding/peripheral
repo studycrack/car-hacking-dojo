@@ -1,0 +1,21 @@
+#!/run/dojo/bin/python3 -u
+import base64
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "e2:55:9a:04:c1:38"
+
+flag = open("/flag").read().strip()
+half = len(flag) // 2
+
+# the phone-as-key module, which the app pairs with to unlock the car
+server = ble.Server(ADDRESS, "DigitalKey-BCM")
+server.add_service(0xFF00)
+server.add_characteristic(0xFF01, flag[:half].encode().hex().encode(), ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"part 1 of 2")
+server.add_characteristic(0xFF02, base64.b64encode(flag[half:].encode()), ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"part 2 of 2")
+
+server.run()

@@ -1,0 +1,33 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "a1:6f:22:d8:03:9c"
+
+KEY = bytes.fromhex("d34dbeef")
+
+flag = open("/flag").read().strip()
+
+# the body control module's bluetooth side, for keyless entry
+server = ble.Server(ADDRESS, "BCM-Keyless")
+server.add_service(0xFF00)
+
+state = {"unlocked": False}
+
+
+def on_key(value, connection):
+    state["unlocked"] = value == KEY
+    vault.value = flag.encode() if state["unlocked"] else b"locked"
+    return None
+
+
+server.add_characteristic(0xFF01, b"\x00" * 4, ble.PROP_READ | ble.PROP_WRITE, on_write=on_key)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"unlock key (4 bytes)")
+vault = server.add_characteristic(0xFF02, b"locked", ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"vault")
+server.add_characteristic(0xFF03, b"", ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"installer left key at factory default d34dbeef")
+
+server.run()

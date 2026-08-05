@@ -1,0 +1,24 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "d9:1c:03:77:4e:22"
+
+flag = open("/flag").read().strip()
+
+# a direct tyre pressure sensor, the kind that also talks to a phone app
+server = ble.Server(ADDRESS, "TPMS-FL-8842")
+server.add_service(0x181A)
+server.add_characteristic(0x2A6D, bytes([0x40, 0x8B, 0x03, 0x00]), ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"Pressure, front left, pascals")
+server.add_service(0xFF00)
+server.add_characteristic(0xFF01, b"cal:0.5", ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"Calibration offset")
+server.add_characteristic(0xFF02, b"", ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, flag.encode())
+server.add_characteristic(0xFF03, bytes([0x01]), ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"Sensor learn mode")
+
+server.run()

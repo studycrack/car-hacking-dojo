@@ -1,0 +1,25 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "c4:be:84:20:11:07"
+
+flag = open("/flag").read().strip()
+
+# the sort of aftermarket dongle that lives permanently in an OBD-II port
+server = ble.Server(ADDRESS, "OBDLink-4C21")
+server.add_service(0x180A)
+server.add_characteristic(0x2A29, b"OBDLink", ble.PROP_READ)
+server.add_characteristic(0x2A24, b"MX+ BLE", ble.PROP_READ)
+server.add_characteristic(0x2A26, b"4.2.7", ble.PROP_READ)
+server.add_service(0x180F)
+server.add_characteristic(0x2A19, bytes([87]), ble.PROP_READ)
+server.add_service(0xFFF0)
+server.add_characteristic(0xFFF1, b"ELM327 v1.5", ble.PROP_READ)
+server.add_characteristic(0xFFF2, b"", ble.PROP_READ | ble.PROP_WRITE)
+server.add_characteristic(0xFFF3, flag.encode(), ble.PROP_READ)
+server.add_characteristic(0xFFF4, bytes([0x06]), ble.PROP_READ)
+
+server.run()

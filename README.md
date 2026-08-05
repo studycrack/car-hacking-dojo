@@ -22,9 +22,15 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `fault-memory` | reading and clearing diagnostic trouble codes, once the reconnaissance that finds the routine is what blocks it | 40m |
 | | `reflash` | the RequestDownload / TransferData / RequestTransferExit sequence, and patching a calibration block | 50m |
 | | `gateway` | reading a central gateway's routing table to reach a bus the OBD connector is not on | 40m |
+| Bluetooth and the Phone | `discovery` | scanning for advertisements, then walking a GATT table with `hcitool` and `gatttool` | 20m |
+| | `descriptors` | the attribute table is larger than the characteristic list; reading descriptors | 20m |
+| | `encoding` | recognising hex and base64 where a device stored bytes as text | 15m |
+| | `fragments` | reassembling a record split across services, in index order rather than handle order | 25m |
+| | `unlock` | writing to a characteristic, and reading the permission error when you write to the wrong one | 25m |
+| | `sequence` | driving a stateful interlock that resets on a wrong step | 30m |
 
-Roughly **ten hours** of hands-on time for a student comfortable with Linux
-and Python; budget half again as long for one who is not. The two modules are
+Roughly **twelve hours** of hands-on time for a student comfortable with Linux
+and Python; budget half again as long for one who is not. The modules are
 independent of each other, but within a module the challenges assume the
 earlier ones --- `rolling-code` expects the capture discipline `fob-capture`
 teaches, `integrity` expects the signal reverse engineering from `spoofing`,
@@ -58,6 +64,28 @@ interface unchanged. See `image/README.md`.
 `shared/real-tools/` holds the one-line wrappers that put the shim in front of
 each binary; `shared/tools/` still holds python implementations of `canascii`
 and `isotpreq`, which have no can-utils equivalent for what they do here.
+
+## Bluetooth is emulated the same way
+
+A workspace has no Bluetooth controller and cannot create one -- an HCI device
+needs `CAP_NET_ADMIN` too. So `shared/ble.py` supplies the radio's absence in
+the same shape as the CAN hub: each peripheral listens on a unix socket named
+after its address under `/run/bluetooth/`, and writes its advertising data
+beside it so a scan can see it without connecting.
+
+Above that it is the real protocol. The PDUs are the ATT opcodes from the
+Bluetooth Core Specification -- Read, Read Blob, Write, Find Information, Read
+By Type, Read By Group Type -- with real handles, real UUIDs and real error
+codes, and `shared/tools/gatttool` and `hcitool` take the BlueZ arguments and
+print the BlueZ output.
+
+One deliberate deviation: `gatttool --char-read` follows a full-length response
+with Read Blob requests until it has the whole value. Real `gatttool` does not,
+and truncates at MTU-1; every real *client stack* (bleak, Android, iOS) returns
+the complete value. This dojo teaches BLE rather than BlueZ trivia, so it
+behaves like the client stacks. `ble.Client.read_once()` is there for a single
+untruncated-by-nobody transaction when a challenge wants to make the MTU
+visible.
 
 ## Layout
 

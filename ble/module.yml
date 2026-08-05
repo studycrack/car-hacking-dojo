@@ -1,0 +1,50 @@
+name: Bluetooth and the Phone
+
+resources:
+  - type: markdown
+    name: The Wireless Half of the Attack Surface
+    expandable: false
+    content: |
+      Everything you have attacked so far needed you to be inside the car with
+      a connector in your hand. The interesting attacks are the ones that do
+      not.
+
+      A car built in the last decade is covered in **Bluetooth Low Energy**.
+      The phone that unlocks it is a BLE peripheral. So are the tyre pressure
+      sensors, the aftermarket dongle somebody left in the OBD-II port, and
+      whatever the workshop paired to it and forgot about. All of it answers
+      from outside the vehicle, to anyone with a radio.
+
+      BLE's data model is **GATT**: a flat table of *attributes*, each with a
+      16-bit *handle* and a *UUID* saying what it is. Characteristics hold
+      values, descriptors annotate them, and the protocol that reads and writes
+      them is **ATT** --- a handful of request/response opcodes and nothing
+      else. There is no session, no authentication by default, and nothing
+      stopping you enumerating the whole table.
+
+      Your workspace has the standard Linux Bluetooth tooling: `hcitool` to
+      scan for what is advertising, `gatttool` to connect and talk to it.
+
+  - id: discovery
+    type: challenge
+    name: Enumerating a Peripheral
+
+  - id: descriptors
+    type: challenge
+    name: Reading the Fine Print
+
+  - id: encoding
+    type: challenge
+    name: Encoding Is Not Encryption
+
+  - id: fragments
+    type: challenge
+    name: Reassembling a Record
+
+  - id: unlock
+    type: challenge
+    name: Write, Then Read
+
+  - id: sequence
+    type: challenge
+    name: An Interlock That Counts
