@@ -37,3 +37,7 @@ resources:
   - id: spoofing
     type: challenge
     name: Reversing the Layout
+
+  - id: integrity
+    type: challenge
+    name: Beating the Checksum
