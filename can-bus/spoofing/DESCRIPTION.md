@@ -8,10 +8,18 @@ something you can *capture*. Start the instrument cluster display:
     /challenge/dashboard
 
 and, in a second terminal, watch the bus. The car is rolling, so the speed on
-that display is moving. Dump the bus, and find the payload bytes that track the
-needle. Work out how the number is encoded while you are there --- it is not
-simply km/h, so compare a byte pair against the displayed value and recover the
-scale factor.
+that display is moving. Find the payload bytes that track the needle, and work
+out how the number is encoded while you are there --- it is not simply km/h, so
+compare a byte pair against the displayed value and recover the scale factor.
+
+`candump` will show you this if you stare long enough. Nobody stares. The tool
+for the job is:
+
+    cansniffer -c vcan0
+
+It keeps one line per identifier instead of scrolling, and colours the bytes
+that just changed. A bus where most traffic is constant and one signal is
+moving becomes obvious in about two seconds. Quit with `q`.
 
 More than one identifier tracks that needle, and the difference matters. One of
 them is what the cluster *listens to*; another is the cluster *announcing* what

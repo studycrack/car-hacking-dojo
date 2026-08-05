@@ -33,3 +33,16 @@ have a recording of them.
 
 Capture a press, work out what you are holding, and open the car with a code
 the owner never spent.
+
+`candump -l vcan0` writes what it sees to a log file rather than to the screen,
+and `canplayer -I <logfile>` puts it back on the bus. Capturing and replaying
+is the shape of this attack, and worth doing that way once even though a single
+`cansend` would also serve --- on a real car, what you capture is rarely
+something you could have typed.
+
+Do not simply replay the whole capture. Your log holds everything that crossed
+the bus while it was running, including the frame that pressed the button in
+the first place --- and replaying that presses the fob again, which spends fresh
+codes and leaves the receiver's counter *past* everything you recorded. A
+replay has to be surgical. Cut the log down to the one frame you mean to send,
+then play that.

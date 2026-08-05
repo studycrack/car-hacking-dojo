@@ -35,7 +35,7 @@ a read.
 asks. You already know how to enter a diagnostic session.
 
 Once you have the image on disk, treat it like firmware, because it is. Run
-`strings` over it, or `hexyl`, or just walk it in python. The controller is
+`strings` over it, or `xxd`, or just walk it in python. The controller is
 chattier in its debug build than its engineers intended, and somewhere in there
 is a service that appears in no specification --- along with what it expects to
 be handed.

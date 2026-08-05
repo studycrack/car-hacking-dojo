@@ -31,7 +31,9 @@ And the park assist module issues genuine, correctly protected requests:
 
 That burst is your specimen. Capture it --- you know by now to have `candump`
 running *before* you trigger it --- and study how the last two bytes behave as
-the payload changes.
+the payload changes. `cansniffer -c vcan0` earns its keep here too: with one
+line per identifier and changed bytes highlighted, a counter that steps by one
+and a checksum that moves with it are visible at a glance.
 
 Then command a steering torque of `0x0BB8`, which the park assist would never
 ask for, and hold it: the module wants **eight consecutive accepted frames**

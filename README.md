@@ -48,10 +48,16 @@ Frames cross that socket in can-utils notation, one per line:
 
     1A0#DEADBEEF00112233
 
-`shared/tools/` then provides `candump`, `cansend`, `canascii`, and `isotpreq`
-with the same argument syntax and output format as the real can-utils, so
-everything a student learns here transfers directly to a real SocketCAN
-interface.
+The tools on top of it are the genuine article. `image/canshim.c`, carried by
+the challenge image, intercepts the calls an `AF_CAN` socket would make and
+routes them to that unix socket, so unmodified `candump`, `cansend`,
+`cansniffer`, `canplayer` and `cangen` work against the emulated bus. A student
+learns the real tools, and what they learn transfers to a real SocketCAN
+interface unchanged. See `image/README.md`.
+
+`shared/real-tools/` holds the one-line wrappers that put the shim in front of
+each binary; `shared/tools/` still holds python implementations of `canascii`
+and `isotpreq`, which have no can-utils equivalent for what they do here.
 
 ## Layout
 
