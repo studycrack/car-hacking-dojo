@@ -1,0 +1,27 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "68:9e:19:33:c7:04"
+
+flag = open("/flag").read().strip()
+
+# the workshop tool's own module: its discovery responses list the customer
+# facing characteristics and quietly omit the engineering ones
+server = ble.Server(ADDRESS, "VCI-Workshop")
+server.add_service(0xFF00)
+server.add_characteristic(0xFF01, b"VCI-3000", ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"tool identity")
+server.add_characteristic(0xFF02, b"licensed", ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"licence state")
+
+# present in the attribute table, absent from every discovery response
+server.add_characteristic(0xFF03, b"engineering mode", ble.PROP_READ, discoverable=False)
+server.add_characteristic(0xFF04, flag.encode(), ble.PROP_READ, discoverable=False)
+
+server.add_characteristic(0xFF05, b"2024-11-03", ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"last calibration")
+
+server.run()

@@ -1,0 +1,33 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "41:d7:6c:8b:20:5f"
+
+# longer than a single Write Request can carry, which is the point
+UNLOCK = b"SERVICE-MODE-ENABLE-0x9C41-CONFIRMED"
+
+flag = open("/flag").read().strip()
+
+server = ble.Server(ADDRESS, "BCM-Keyless")
+server.add_service(0xFF00)
+
+state = {"open": False}
+
+
+def on_command(value, connection):
+    state["open"] = value == UNLOCK
+    vault.value = flag.encode() if state["open"] else b"service mode closed"
+    return None
+
+
+server.add_characteristic(0xFF01, b"", ble.PROP_WRITE, on_write=on_command)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"service mode command")
+vault = server.add_characteristic(0xFF02, b"service mode closed", ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"service mode state")
+server.add_characteristic(0xFF03, UNLOCK, ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"command the workshop tool sends")
+
+server.run()

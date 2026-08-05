@@ -1,0 +1,58 @@
+#!/run/dojo/bin/python3 -u
+"""The immobiliser, on a bus the OBD connector does not reach."""
+import sys
+
+sys.path.insert(0, "/challenge")
+import isotp
+import vcan
+
+REQUEST_ID = 0x6F2
+RESPONSE_ID = 0x6FA
+
+DIAGNOSTIC_SESSION_CONTROL = 0x10
+ROUTINE_CONTROL = 0x31
+TESTER_PRESENT = 0x3E
+
+EXTENDED_SESSION = 0x03
+DISARM_ROUTINE = 0xC001
+
+bus = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+session = 0x01
+
+vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=5)
+vcan.transmit_periodically(bus, 0x1A0, lambda: bytes([0, 0, 0, 0, 0, 0, 0, 0]), hz=2)
+
+
+def handle(request):
+    global session
+    if request[0] == TESTER_PRESENT:
+        return bytes([0x7E, 0x00])
+    if request[0] == DIAGNOSTIC_SESSION_CONTROL:
+        if len(request) != 2:
+            return bytes([0x7F, request[0], 0x13])
+        session = request[1] & 0x7F
+        return bytes([0x50, request[1], 0x00, 0x32, 0x01, 0xF4])
+    if request[0] == ROUTINE_CONTROL:
+        if len(request) != 4:
+            return bytes([0x7F, request[0], 0x13])
+        if (request[2] << 8 | request[3]) != DISARM_ROUTINE:
+            return bytes([0x7F, request[0], 0x31])
+        if session != EXTENDED_SESSION:
+            return bytes([0x7F, request[0], 0x22])
+        return bytes([0x71, request[1], request[2], request[3]]) + flag.encode()
+    return bytes([0x7F, request[0], 0x11])
+
+
+frames = bus.frames()
+while True:
+    try:
+        request = isotp.recv(bus, REQUEST_ID, RESPONSE_ID, timeout=3600, frames=frames)
+    except TimeoutError:
+        continue
+    if request:
+        try:
+            isotp.send(bus, RESPONSE_ID, REQUEST_ID, handle(request), timeout=10, frames=frames)
+        except TimeoutError:
+            continue

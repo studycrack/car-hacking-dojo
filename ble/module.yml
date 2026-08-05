@@ -86,3 +86,14 @@ resources:
   - id: service-data
     type: challenge
     name: Typed Advertising Data
+
+  - type: header
+    content: Beyond the Discovery Response
+
+  - id: hidden-handles
+    type: challenge
+    name: Walking the Handles
+
+  - id: long-write
+    type: challenge
+    name: Writing More Than Fits

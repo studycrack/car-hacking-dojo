@@ -46,6 +46,10 @@ resources:
     type: challenge
     name: Beating the Checksum
 
+  - id: dbc
+    type: challenge
+    name: Reading the Database
+
   - id: secoc
     type: challenge
     name: Authenticated Frames

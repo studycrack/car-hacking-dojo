@@ -1,0 +1,11 @@
+#!/bin/bash
+
+chmod 700 /challenge/ecu /challenge/dongle
+
+touch /run/challenge.log
+chmod 600 /run/challenge.log
+
+# the vehicle bus is not wired to anything the attacker can reach
+/run/dojo/bin/setsid /challenge/vcan.py vcan0 --private </dev/null >>/run/challenge.log 2>&1 &
+/run/dojo/bin/setsid /challenge/ecu </dev/null >>/run/challenge.log 2>&1 &
+/run/dojo/bin/setsid /challenge/dongle </dev/null >>/run/challenge.log 2>&1 &

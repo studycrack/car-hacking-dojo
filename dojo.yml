@@ -5,9 +5,10 @@ name: Car Hacking
 award:
   emoji: 🚗
 
-image: ghcr.io/studycrack/car-hacking-dojo/challenge-can:v2
+image: ghcr.io/studycrack/car-hacking-dojo/challenge-can:v3
 
 modules:
   - id: can-bus
   - id: uds
   - id: ble
+  - id: capstone

@@ -1,0 +1,105 @@
+#!/run/dojo/bin/python3 -u
+import sys
+import threading
+
+sys.path.insert(0, "/challenge")
+import isotp
+import vcan
+
+CLUSTER_REQUEST_ID = 0x7E0
+CLUSTER_RESPONSE_ID = 0x7E8
+GATEWAY_REQUEST_ID = 0x7E1
+GATEWAY_RESPONSE_ID = 0x7E9
+
+DIAGNOSTIC_SESSION_CONTROL = 0x10
+READ_DATA_BY_IDENTIFIER = 0x22
+WRITE_DATA_BY_IDENTIFIER = 0x2E
+TESTER_PRESENT = 0x3E
+
+EXTENDED_SESSION = 0x03
+
+ODOMETER_DID = 0xF1A2
+PLAUSIBILITY_DID = 0xF1A3
+
+NRC_SERVICE_NOT_SUPPORTED = 0x11
+NRC_INCORRECT_LENGTH = 0x13
+NRC_CONDITIONS_NOT_CORRECT = 0x22
+NRC_REQUEST_OUT_OF_RANGE = 0x31
+
+TARGET_KILOMETRES = 40000
+
+bus = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+# every controller that has ever seen the mileage keeps its own copy, which is
+# exactly how a cluster notices that one of them has been rewritten
+mileage = {CLUSTER_REQUEST_ID: 214_768, GATEWAY_REQUEST_ID: 214_768}
+session = {CLUSTER_REQUEST_ID: 0x01, GATEWAY_REQUEST_ID: 0x01}
+
+vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+
+
+def plausibility():
+    values = set(mileage.values())
+    if len(values) != 1:
+        return b"IMPLAUSIBLE: stored mileage differs between controllers"
+    if values.pop() > TARGET_KILOMETRES:
+        return b"PLAUSIBLE"
+    return b"PLAUSIBLE " + flag.encode()
+
+
+def handle(address, request):
+    if request[0] == TESTER_PRESENT:
+        return bytes([0x7E, 0x00])
+
+    if request[0] == DIAGNOSTIC_SESSION_CONTROL:
+        if len(request) != 2:
+            return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+        session[address] = request[1] & 0x7F
+        return bytes([0x50, request[1], 0x00, 0x32, 0x01, 0xF4])
+
+    if request[0] == READ_DATA_BY_IDENTIFIER:
+        if len(request) != 3:
+            return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+        did = request[1] << 8 | request[2]
+        if did == ODOMETER_DID:
+            return bytes([0x62, request[1], request[2]]) + mileage[address].to_bytes(4, "big")
+        if did == PLAUSIBILITY_DID and address == CLUSTER_REQUEST_ID:
+            return bytes([0x62, request[1], request[2]]) + plausibility()
+        return bytes([0x7F, request[0], NRC_REQUEST_OUT_OF_RANGE])
+
+    if request[0] == WRITE_DATA_BY_IDENTIFIER:
+        if session[address] != EXTENDED_SESSION:
+            return bytes([0x7F, request[0], NRC_CONDITIONS_NOT_CORRECT])
+        if len(request) != 7:
+            return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+        did = request[1] << 8 | request[2]
+        if did != ODOMETER_DID:
+            return bytes([0x7F, request[0], NRC_REQUEST_OUT_OF_RANGE])
+        mileage[address] = int.from_bytes(request[3:7], "big")
+        return bytes([0x6E, request[1], request[2]])
+
+    return bytes([0x7F, request[0], NRC_SERVICE_NOT_SUPPORTED])
+
+
+def serve(request_id, response_id):
+    # one connection per address: two readers on one socket would split the
+    # frames between them at random
+    link = vcan.Bus("vcan0")
+    frames = link.frames()
+    while True:
+        try:
+            request = isotp.recv(link, request_id, response_id, timeout=3600, frames=frames)
+        except TimeoutError:
+            continue
+        if not request:
+            continue
+        try:
+            isotp.send(link, response_id, request_id, handle(request_id, request),
+                       timeout=10, frames=frames)
+        except TimeoutError:
+            continue
+
+
+threading.Thread(target=serve, args=(GATEWAY_REQUEST_ID, GATEWAY_RESPONSE_ID), daemon=True).start()
+serve(CLUSTER_REQUEST_ID, CLUSTER_RESPONSE_ID)

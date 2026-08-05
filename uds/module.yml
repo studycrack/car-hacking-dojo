@@ -43,6 +43,10 @@ resources:
     type: challenge
     name: Writing It Back
 
+  - id: odometer
+    type: challenge
+    name: Rewriting What the Car Remembers
+
   - id: gateway
     type: challenge
     name: Crossing the Gateway

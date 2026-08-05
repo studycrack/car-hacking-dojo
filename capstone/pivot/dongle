@@ -1,0 +1,55 @@
+#!/run/dojo/bin/python3 -u
+"""The aftermarket dongle: a BLE peripheral on one side, a CAN transceiver on
+the other, and no notion that those two sides should be kept apart."""
+import sys
+import threading
+
+sys.path.insert(0, "/challenge")
+import ble
+import vcan
+
+ADDRESS = "c4:be:84:20:11:07"
+
+CHAR_STATUS = 0xFFF1
+CHAR_TX = 0xFFF2      # write a frame here and the dongle puts it on the bus
+CHAR_RX = 0xFFF3      # frames off the bus arrive here as notifications
+
+server = ble.Server(ADDRESS, "OBDLink-4C21")
+server.add_service(0x180A)
+server.add_characteristic(0x2A29, b"OBDLink", ble.PROP_READ)
+server.add_service(0xFFF0)
+server.add_characteristic(CHAR_STATUS, b"ELM327 v1.5 bridge=on", ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"adapter status")
+
+# the vehicle bus, which the dongle is on and you are not
+link = vcan.Bus("vcan0")
+
+
+def on_transmit(value, connection):
+    """A frame arrives as ID#DATA, the notation the dongle's app uses."""
+    try:
+        can_id, payload = vcan.parse_frame(value.decode())
+    except (ValueError, UnicodeDecodeError):
+        return None
+    link.send(can_id, payload)
+    return None
+
+
+received = server.add_characteristic(CHAR_RX, b"", ble.PROP_NOTIFY)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"frames received from the vehicle bus")
+server.add_cccd(received.handle)
+server.add_characteristic(CHAR_TX, b"", ble.PROP_WRITE, on_write=on_transmit)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"write ID#DATA to transmit on the vehicle bus")
+
+
+def relay():
+    listener = vcan.Bus("vcan0")
+    for can_id, payload in listener.frames():
+        line = vcan.format_frame(can_id, payload).encode()
+        for (connection, value_handle), setting in list(server.subscriptions.items()):
+            if value_handle == received.handle and setting == ble.CCCD_NOTIFY:
+                server.notify(connection, received.handle, line)
+
+
+threading.Thread(target=relay, daemon=True).start()
+server.run()

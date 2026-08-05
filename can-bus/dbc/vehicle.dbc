@@ -1,0 +1,26 @@
+VERSION "workshop export 2024-11"
+
+NS_ :
+	BA_
+	BA_DEF_
+	BA_DEF_DEF_
+	CM_
+	VAL_
+
+BS_:
+
+BU_: BCM CLUSTER ESP
+
+BO_ 421 ESP_Status: 8 ESP
+ SG_ WheelSpeedFL : 7|16@0+ (0.01,0) [0|655.35] "km/h" CLUSTER
+ SG_ WheelSpeedFR : 23|16@0+ (0.01,0) [0|655.35] "km/h" CLUSTER
+ SG_ YawRate : 39|16@0- (0.0001,0) [-3.2768|3.2767] "rad/s" CLUSTER
+ SG_ EspActive : 55|1@0+ (1,0) [0|1] "" CLUSTER
+
+BO_ 645 BCM_Command: 8 BCM
+ SG_ SeatHeaterLevel : 7|3@0+ (1,0) [0|5] "" BCM
+ SG_ MirrorFoldRequest : 4|1@0+ (1,0) [0|1] "" BCM
+ SG_ CabinTargetTemp : 15|8@0+ (0.5,-20) [-20|107.5] "degC" BCM
+ SG_ VentFanSpeed : 23|4@0+ (1,0) [0|15] "" BCM
+
+CM_ BO_ 645 "Comfort commands. Cabin target is offset by -20 and scaled by 0.5, and the signal is Motorola byte order like everything else on this bus.";

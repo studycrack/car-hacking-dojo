@@ -37,6 +37,10 @@ ATT_READ_BLOB_REQ = 0x0C
 ATT_READ_BLOB_RSP = 0x0D
 ATT_READ_BY_GROUP_TYPE_REQ = 0x10
 ATT_READ_BY_GROUP_TYPE_RSP = 0x11
+ATT_PREPARE_WRITE_REQ = 0x16
+ATT_PREPARE_WRITE_RSP = 0x17
+ATT_EXECUTE_WRITE_REQ = 0x18
+ATT_EXECUTE_WRITE_RSP = 0x19
 ATT_WRITE_REQ = 0x12
 ATT_WRITE_RSP = 0x13
 ATT_HANDLE_VALUE_NTF = 0x1B
@@ -49,6 +53,7 @@ ERR_WRITE_NOT_PERMITTED = 0x03
 ERR_INVALID_PDU = 0x04
 ERR_ATTRIBUTE_NOT_FOUND = 0x0A
 ERR_INVALID_OFFSET = 0x07
+ERR_INVALID_ATTRIBUTE_LENGTH = 0x0D
 ERR_UNLIKELY_ERROR = 0x0E
 ERR_UNSUPPORTED_GROUP_TYPE = 0x10
 
@@ -155,13 +160,17 @@ class Advertisement:
 
 
 class Attribute:
-    def __init__(self, handle, uuid, value=b"", readable=True, writable=False, on_write=None):
+    def __init__(self, handle, uuid, value=b"", readable=True, writable=False, on_write=None,
+                 discoverable=True):
         self.handle = handle
         self.uuid = uuid
         self.value = value
         self.readable = readable
         self.writable = writable
         self.on_write = on_write
+        # a peripheral chooses what its discovery responses mention; it does
+        # not thereby stop serving the handle
+        self.discoverable = discoverable
 
 
 class Server:
@@ -187,12 +196,15 @@ class Server:
         self.on_subscribe = None
         self.rotation = None
         self.rotation_period = 0.4
+        self.prepared = {}
 
         self.add_service(0x1800)
         self.add_characteristic(UUID_DEVICE_NAME, name.encode(), PROP_READ)
 
-    def _append(self, uuid, value, readable=True, writable=False, on_write=None):
-        attribute = Attribute(self.next_handle, uuid, value, readable, writable, on_write)
+    def _append(self, uuid, value, readable=True, writable=False, on_write=None,
+                discoverable=True):
+        attribute = Attribute(self.next_handle, uuid, value, readable, writable, on_write,
+                              discoverable)
         self.attributes.append(attribute)
         self.next_handle += 1
         return attribute
@@ -202,16 +214,18 @@ class Server:
         self.service_handle = declaration.handle
         return declaration.handle
 
-    def add_characteristic(self, uuid, value=b"", properties=PROP_READ, on_write=None):
+    def add_characteristic(self, uuid, value=b"", properties=PROP_READ, on_write=None,
+                           discoverable=True):
         # a characteristic is two attributes: the declaration announcing the
         # properties and where the value lives, and the value itself
         value_handle = self.next_handle + 1
         self._append(UUID_CHARACTERISTIC,
-                     struct.pack("<BH H", properties, value_handle, uuid))
+                     struct.pack("<BH H", properties, value_handle, uuid),
+                     discoverable=discoverable)
         return self._append(uuid, value,
                             readable=bool(properties & PROP_READ),
                             writable=bool(properties & (PROP_WRITE | PROP_WRITE_NO_RESPONSE)),
-                            on_write=on_write)
+                            on_write=on_write, discoverable=discoverable)
 
     def add_descriptor(self, uuid, value):
         return self._append(uuid, value)
@@ -334,6 +348,37 @@ class Server:
                 self._send_indication(connection)
             return None
 
+        if opcode == ATT_PREPARE_WRITE_REQ:
+            handle, offset = struct.unpack("<HH", pdu[1:5])
+            attribute = self.find(handle)
+            if attribute is None:
+                return self.error(opcode, handle, ERR_INVALID_HANDLE)
+            if not attribute.writable:
+                return self.error(opcode, handle, ERR_WRITE_NOT_PERMITTED)
+            self.prepared.setdefault(connection, []).append((handle, offset, pdu[5:]))
+            return pdu[:1].replace(bytes([ATT_PREPARE_WRITE_REQ]),
+                                   bytes([ATT_PREPARE_WRITE_RSP])) + pdu[1:]
+
+        if opcode == ATT_EXECUTE_WRITE_REQ:
+            queued = self.prepared.pop(connection, [])
+            if not pdu[1:2] or pdu[1] == 0x00:
+                return bytes([ATT_EXECUTE_WRITE_RSP])
+            assembled = {}
+            for handle, offset, fragment in queued:
+                buffer = assembled.setdefault(handle, bytearray())
+                if len(buffer) < offset + len(fragment):
+                    buffer.extend(b"\x00" * (offset + len(fragment) - len(buffer)))
+                buffer[offset:offset + len(fragment)] = fragment
+            for handle, buffer in assembled.items():
+                attribute = self.find(handle)
+                if attribute is None:
+                    continue
+                if attribute.on_write:
+                    attribute.on_write(bytes(buffer), connection)
+                else:
+                    attribute.value = bytes(buffer)
+            return bytes([ATT_EXECUTE_WRITE_RSP])
+
         if opcode == ATT_READ_BLOB_REQ:
             handle, offset = struct.unpack("<HH", pdu[1:5])
             attribute = self.find(handle)
@@ -361,7 +406,7 @@ class Server:
         if opcode == ATT_READ_BY_TYPE_REQ:
             start, end, kind = struct.unpack("<HHH", pdu[1:7])
             matches = [a for a in self.attributes
-                       if a.uuid == kind and start <= a.handle <= end]
+                       if a.uuid == kind and start <= a.handle <= end and a.discoverable]
             if not matches:
                 return self.error(opcode, start, ERR_ATTRIBUTE_NOT_FOUND)
             size = 2 + len(matches[0].value)
@@ -377,7 +422,7 @@ class Server:
 
         if opcode == ATT_FIND_INFORMATION_REQ:
             start, end = struct.unpack("<HH", pdu[1:5])
-            matches = [a for a in self.attributes if start <= a.handle <= end]
+            matches = [a for a in self.attributes if start <= a.handle <= end and a.discoverable]
             if not matches:
                 return self.error(opcode, start, ERR_ATTRIBUTE_NOT_FOUND)
             entries = b""
@@ -610,6 +655,24 @@ class Client:
             if not body:
                 break
         return found
+
+    def write_long(self, handle, value, chunk=None):
+        """Write a value that will not fit in one Write Request.
+
+        Each piece is queued with a Prepare Write, carrying the offset it
+        belongs at, and nothing is applied until the Execute Write at the end.
+        """
+        room = chunk or (DEFAULT_MTU - 5)
+        for offset in range(0, len(value), room):
+            fragment = value[offset:offset + room]
+            response = self.request(struct.pack("<BHH", ATT_PREPARE_WRITE_REQ, handle, offset)
+                                    + fragment)
+            if response[0] == ATT_ERROR_RSP:
+                raise ATTError(response[4])
+        response = self.request(struct.pack("<BB", ATT_EXECUTE_WRITE_REQ, 0x01))
+        if response[0] == ATT_ERROR_RSP:
+            raise ATTError(response[4])
+        return True
 
     def subscribe(self, cccd_handle, indicate=False):
         return self.write(cccd_handle, struct.pack("<H", CCCD_INDICATE if indicate else CCCD_NOTIFY))

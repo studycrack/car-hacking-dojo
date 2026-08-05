@@ -14,6 +14,7 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `injection` | forging frames with `cansend` against a live controller | 25m |
 | | `spoofing` | reverse engineering a signal's identifier, offset, and scale, then out-transmitting the real sensor | 50m |
 | | `integrity` | recovering an alive counter and checksum from captured traffic to forge frames a validating module accepts | 55m |
+| | `dbc` | reading a DBC file and letting cantools do the Motorola bit packing | 30m |
 | | `secoc` | forging an authenticated frame without the key, by changing a field the MAC was never computed over | 60m |
 | Diagnostics and UDS | `iso-tp` | segmentation and flow control, by hand | 45m |
 | | `ecu-discovery` | address and data-identifier enumeration | 30m |
@@ -21,6 +22,7 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `firmware-dump` | ReadMemoryByAddress: locating flash, probing the read ceiling, dumping it, and mining the image for an undocumented service | 45m |
 | | `fault-memory` | reading and clearing diagnostic trouble codes, once the reconnaissance that finds the routine is what blocks it | 40m |
 | | `reflash` | the RequestDownload / TransferData / RequestTransferExit sequence, and patching a calibration block | 50m |
+| | `odometer` | WriteDataByIdentifier, and the second controller that remembers the mileage | 35m |
 | | `gateway` | reading a central gateway's routing table to reach a bus the OBD connector is not on | 40m |
 | Bluetooth and the Phone | `discovery` | scanning for advertisements, then walking a GATT table with `hcitool` and `gatttool` | 20m |
 | | `descriptors` | the attribute table is larger than the characteristic list; reading descriptors | 20m |
@@ -36,8 +38,11 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `beacon` | parsing AD structures out of a broadcast nobody has to connect to | 25m |
 | | `scan-response` | the second payload a peripheral only sends when asked, and what asking costs | 25m |
 | | `service-data` | AD structures are typed, and the type says where the data starts | 20m |
+| | `hidden-handles` | a discovery response is a list the firmware chose to send; the handles work anyway | 25m |
+| | `long-write` | Prepare and Execute Write, for a value one request cannot carry | 25m |
+| Capstone | `pivot` | reaching an unreachable bus through the BLE dongle bridged onto it | 60m |
 
-Roughly **fifteen hours** of hands-on time for a student comfortable with Linux
+Roughly **eighteen hours** of hands-on time for a student comfortable with Linux
 and Python; budget half again as long for one who is not. The modules are
 independent of each other, but within a module the challenges assume the
 earlier ones --- `rolling-code` expects the capture discipline `fob-capture`

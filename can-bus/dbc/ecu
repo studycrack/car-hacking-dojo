@@ -1,0 +1,39 @@
+#!/run/dojo/bin/python3 -u
+import random
+import struct
+import sys
+import time
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+ESP_STATUS_ID = 421
+BCM_COMMAND_ID = 645
+FLAG_ID = 0x7C0
+
+# what the workshop asked for, in engineering units
+TARGET_TEMP_C = 30.5
+TARGET_FAN = 11
+
+bus = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+
+def esp_status():
+    speed = int(random.uniform(38, 44) / 0.01)
+    yaw = random.randint(-400, 400) & 0xFFFF
+    return struct.pack(">HHHBx", speed, speed, yaw, 0x02)
+
+
+vcan.transmit_periodically(bus, ESP_STATUS_ID, esp_status, hz=20)
+vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+
+for can_id, data in bus.frames():
+    if can_id != BCM_COMMAND_ID or len(data) != 8:
+        continue
+    # CabinTargetTemp: start bit 15, 8 bits, Motorola, scale 0.5, offset -20
+    temperature = data[1] * 0.5 - 20
+    # VentFanSpeed: start bit 23, 4 bits, Motorola -> the high nibble of byte 2
+    fan = data[2] >> 4
+    if abs(temperature - TARGET_TEMP_C) < 0.01 and fan == TARGET_FAN:
+        bus.send_text(FLAG_ID, flag)
