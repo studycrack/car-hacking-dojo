@@ -32,11 +32,11 @@ def flag_from_bus(bus, can_id=0x7C0):
 """
 
 
-def workspace_python(script, *, user, timeout=SOLVE_TIMEOUT):
+def workspace_python(script, *, user, timeout=SOLVE_TIMEOUT, interpreter="/run/dojo/bin/python3"):
     source = PRELUDE.format(timeout=timeout) + textwrap.dedent(script)
     encoded = base64.b64encode(source.encode()).decode()
     result = workspace_run(
-        f"echo {encoded} | base64 -d > /tmp/exploit.py && /run/dojo/bin/python3 -u /tmp/exploit.py",
+        f"echo {encoded} | base64 -d > /tmp/exploit.py && {interpreter} -u /tmp/exploit.py",
         user=user,
     )
     return result.stdout.strip()
@@ -983,6 +983,8 @@ def test_ble_long_write(random_user, car_hacking_dojo):
 def test_dbc(random_user, car_hacking_dojo):
     user, session = random_user
     start(car_hacking_dojo, "can-bus", "dbc", user=user, session=session)
+    # cantools lives in the challenge image, not in the dojo's own interpreter
+    assert workspace_run("command -v cantools", user=user).stdout.strip()
     output = workspace_python("""
         import cantools
 
@@ -1005,7 +1007,7 @@ def test_dbc(random_user, car_hacking_dojo):
 
         threading.Thread(target=press, daemon=True).start()
         print(flag_from_bus(listener))
-    """, user=user)
+    """, user=user, interpreter="/usr/bin/python3")
     flag = solved(output)
     assert flag.startswith("pwn.college{")
     solve_challenge(car_hacking_dojo, "can-bus", "dbc", session=session, flag=flag)

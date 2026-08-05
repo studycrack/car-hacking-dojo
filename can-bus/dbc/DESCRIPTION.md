@@ -17,8 +17,21 @@ hand would cost you: the cabin temperature is scaled by `0.5` and offset by
 start bits counted in a way that has caught out everyone who has ever tried it
 freehand.
 
-Do not do it freehand. `cantools` reads DBC files and does the packing for you:
+Do not do it freehand. `cantools` reads DBC files and does the packing for
+you. It is on your path:
 
+    cantools dump /challenge/vehicle.dbc
+
+and it is importable, with one wrinkle worth understanding. `python3` in this
+workspace is the dojo's own interpreter, shared by every challenge in every
+dojo; `cantools` is installed in the challenge image, alongside the can-utils.
+Those are two different interpreters, and only one of them has the library:
+
+    /usr/bin/python3 -c 'import cantools; print(cantools.__version__)'
+
+So write your script for that one:
+
+    #!/usr/bin/python3
     import cantools
     db = cantools.database.load_file("/challenge/vehicle.dbc")
     message = db.get_message_by_name("BCM_Command")

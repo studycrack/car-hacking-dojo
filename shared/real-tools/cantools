@@ -1,0 +1,5 @@
+#!/bin/sh
+# The cantools command line, run against the interpreter it was installed for.
+# `python3` in a workspace is the dojo's own toolchain and does not carry the
+# challenge image's libraries; this one does.
+exec /usr/bin/python3 -m cantools "$@"
