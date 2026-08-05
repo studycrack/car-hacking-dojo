@@ -26,7 +26,11 @@ RUN apt-get update \
         binutils \
         python3 \
         python3-can \
+        python3-pip \
         xxd \
+ && pip3 install --no-cache-dir --break-system-packages cantools \
+ && apt-get purge -y python3-pip \
+ && apt-get autoremove -y \
  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /build/canshim.so /opt/canshim.so
