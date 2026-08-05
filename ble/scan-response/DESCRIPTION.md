@@ -21,3 +21,9 @@ This key fob keeps half of what you want in each. Both tools take the flag:
 Compare the two. Then decide to be seen, and collect the rest --- the fragments
 in the scan response continue the numbering from the advertisement, so once you
 have both halves the ordering tells you how they join.
+
+The dojo models this the only way it can without a radio: the advertisement is
+broadcast, so it sits where anyone can read it, while the scan response exists
+only as an answer and has to be asked for. What is faithful is the asymmetry.
+What is not modelled is range --- a real passive scan is limited by how close
+you can get, and this one is not.

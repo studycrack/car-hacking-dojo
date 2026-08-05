@@ -77,6 +77,14 @@ AD_TYPE_NAMES = {
 
 ADVERTISING_MAX = 31
 
+# Scanning happens below ATT, at the link layer, which this emulation does not
+# otherwise model. These two opcodes stand in for it, and are deliberately
+# outside the ATT opcode space. What matters is the asymmetry they preserve:
+# an advertisement is broadcast and costs the listener nothing, while a scan
+# response only exists because the scanner transmitted a request.
+LL_SCAN_REQ = 0xFE
+LL_SCAN_RSP = 0xFF
+
 CCCD_NONE = 0x0000
 CCCD_NOTIFY = 0x0001
 CCCD_INDICATE = 0x0002
@@ -287,6 +295,10 @@ class Server:
             return None
         opcode = pdu[0]
 
+        if opcode == LL_SCAN_REQ:
+            payload = self.scan_response.encode() if self.scan_response else b""
+            return bytes([LL_SCAN_RSP]) + payload
+
         if opcode == ATT_EXCHANGE_MTU_REQ:
             return struct.pack("<BH", ATT_EXCHANGE_MTU_RSP, DEFAULT_MTU)
 
@@ -391,9 +403,10 @@ class Server:
         passive and an active scan.
         """
         os.makedirs(SOCKET_DIR, exist_ok=True)
+        # only the advertisement goes in the file: it is broadcast, so anyone
+        # in range has it. The scan response is not written anywhere, because
+        # nothing has asked for it yet.
         lines = f"adv={self.advertising.encode().hex()}\n"
-        if self.scan_response is not None:
-            lines += f"rsp={self.scan_response.encode().hex()}\n"
         path = advertising_path(self.address)
         with open(path, "w") as handle:
             handle.write(lines)
@@ -673,7 +686,18 @@ def scan(active=True):
         except OSError:
             continue
         advertisement = bytes.fromhex(record.get("adv", ""))
-        response = bytes.fromhex(record.get("rsp", "")) if active and "rsp" in record else None
+        response = None
+        if active:
+            # asking means transmitting, and transmitting means touching the
+            # peripheral rather than only listening to it
+            try:
+                client = Client(address, timeout=1)
+                reply = client.request(bytes([LL_SCAN_REQ]))
+                client.close()
+                if reply and reply[0] == LL_SCAN_RSP and len(reply) > 1:
+                    response = reply[1:]
+            except OSError:
+                response = None
         devices.append((address, advertisement, response))
     return devices
 

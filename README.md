@@ -85,7 +85,10 @@ Advertising is real too: `Advertisement` builds AD structures -- length, type,
 data -- and refuses a payload over the thirty-one bytes the air allows, which
 is why anything larger than that goes out as a rotating sequence of payloads
 the way a real beacon does. A scan reads the advertisement, and reads the scan
-response only when it is active.
+response only when it is active --- and that distinction is enforced rather
+than declared: the advertisement is written where any process can read it,
+because it is broadcast, while the scan response is only ever produced as an
+answer to a request sent to the peripheral. A passive scan never touches it.
 
 Above that it is the real protocol. The PDUs are the ATT opcodes from the
 Bluetooth Core Specification -- Read, Read Blob, Write, Find Information, Read
