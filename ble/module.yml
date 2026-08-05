@@ -25,6 +25,9 @@ resources:
       Your workspace has the standard Linux Bluetooth tooling: `hcitool` to
       scan for what is advertising, `gatttool` to connect and talk to it.
 
+  - type: header
+    content: Walking a GATT table
+
   - id: discovery
     type: challenge
     name: Enumerating a Peripheral
@@ -50,7 +53,7 @@ resources:
     name: An Interlock That Counts
 
   - type: header
-    content: Events
+    content: "Events: the peripheral speaks first"
 
   - id: notify
     type: challenge
@@ -73,7 +76,7 @@ resources:
     name: A Property That Lies
 
   - type: header
-    content: Advertising
+    content: "Advertising: before anyone connects"
 
   - id: beacon
     type: challenge
@@ -88,7 +91,7 @@ resources:
     name: Typed Advertising Data
 
   - type: header
-    content: Beyond the Discovery Response
+    content: "Beyond the discovery response: what the firmware chose not to mention"
 
   - id: hidden-handles
     type: challenge

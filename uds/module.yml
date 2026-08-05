@@ -19,17 +19,29 @@ resources:
       on the bus. The only thing standing in the way is UDS's own access
       control, which is where this module ends up.
 
+  - type: header
+    content: Getting a diagnostic session to talk to you
+
   - id: iso-tp
     type: challenge
     name: Segmented Transport
+
+  - type: header
+    content: "Finding what is there: enumeration, and what enumeration records"
 
   - id: ecu-discovery
     type: challenge
     name: Enumerating Controllers
 
+  - type: header
+    content: Getting past what says no
+
   - id: security-access
     type: challenge
     name: Defeating SecurityAccess
+
+  - type: header
+    content: Reading and writing a controller's memory
 
   - id: firmware-dump
     type: challenge
@@ -46,6 +58,9 @@ resources:
   - id: odometer
     type: challenge
     name: Rewriting What the Car Remembers
+
+  - type: header
+    content: Reaching what the connector cannot
 
   - id: gateway
     type: challenge

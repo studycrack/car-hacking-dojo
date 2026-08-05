@@ -42,6 +42,11 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `long-write` | Prepare and Execute Write, for a value one request cannot carry | 25m |
 | Capstone | `pivot` | reaching an unreachable bus through the BLE dongle bridged onto it | 60m |
 
+The dojo's front page sorts the same challenges a second way, by what they ask
+of you rather than which interface they are on: following an instruction,
+combining two things, finding what nobody told you, and defeating something
+built to stop you. The module headers carry the same bands.
+
 Roughly **eighteen hours** of hands-on time for a student comfortable with Linux
 and Python; budget half again as long for one who is not. The modules are
 independent of each other, but within a module the challenges assume the

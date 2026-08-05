@@ -18,6 +18,9 @@ resources:
       vehicle, and the standard Linux CAN tooling to work with it: `candump` to
       listen, `cansend` to transmit.
 
+  - type: header
+    content: Reading the bus
+
   - id: sniffing
     type: challenge
     name: Listening to the Bus
@@ -30,6 +33,9 @@ resources:
     type: challenge
     name: Catching a One-Shot
 
+  - type: header
+    content: "Replaying and forging: two things to combine, not one to follow"
+
   - id: rolling-code
     type: challenge
     name: Rolling Codes
@@ -38,17 +44,23 @@ resources:
     type: challenge
     name: Forging Frames
 
+  - type: header
+    content: "Working out what the bytes mean, without a database and with one"
+
   - id: spoofing
     type: challenge
     name: Reversing the Layout
 
-  - id: integrity
-    type: challenge
-    name: Beating the Checksum
-
   - id: dbc
     type: challenge
     name: Reading the Database
+
+  - type: header
+    content: "Defeating a defence: understand what it protects, and what it does not"
+
+  - id: integrity
+    type: challenge
+    name: Beating the Checksum
 
   - id: secoc
     type: challenge

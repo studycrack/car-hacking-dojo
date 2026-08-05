@@ -24,6 +24,56 @@ the computers that answer on the bus, and defeat the authentication that stands
 between a diagnostic session and the parts of an ECU that were never meant to
 be reachable from the OBD-II port.
 
-Everything here is a simulation --- your workspace has a virtual CAN interface,
-`vcan0`, attached to a simulated vehicle. The tools, the frame formats, the
-protocols, and the attacks are the real ones.
+And then off the wire entirely, to the Bluetooth the car answers on: the phone
+that unlocks it, the tyre sensors, the aftermarket dongle somebody left in the
+OBD-II port --- which is bridged onto the very bus you spent the first two
+modules attacking. The last challenge is that bridge.
+
+Everything here is a simulation. Your workspace has a virtual CAN interface,
+`vcan0`, and peripherals advertising over a virtual radio, both attached to a
+simulated vehicle. What is simulated is the wire and the air; the tools, the
+frame formats, the protocols and the attacks are the real ones.
+
+## Where to start
+
+The modules are grouped by interface, not by difficulty, because within each one
+the challenges build on each other --- the rolling code challenge assumes the
+capture discipline the one before it teaches, and the checksum challenge assumes
+the signal reverse engineering from the one before that. Work down a module and
+the ramp is already there.
+
+What follows is the other view: the same thirty-four challenges sorted by what
+they ask of you, so you can judge where to begin and what you are in for.
+
+**Following an instruction.** The description tells you the command. Run it, and
+watch what a bus or a peripheral hands over to anyone who asks.
+
+> `sniffing` · `discovery` · `descriptors` · `encoding` · `notify` · `beacon`
+
+**Combining two things.** Read something, then use it: a session counter that
+rotates, an index that says which fragment goes where, a subscription that has
+to exist before you trigger the thing you want to hear.
+
+> `filtering` · `fob-capture` · `injection` · `fragments` · `unlock` ·
+> `sequence` · `stream` · `indicate` · `trigger` · `service-data` ·
+> `scan-response` · `long-write` · `dbc`
+
+**Finding what nobody told you.** A handle that is missing from the discovery
+response but answers anyway. A service in no specification. A signal whose
+scale factor is yours to work out.
+
+> `hidden-notify` · `hidden-handles` · `ecu-discovery` · `fault-memory` ·
+> `iso-tp` · `firmware-dump` · `spoofing` · `odometer` · `gateway` ·
+> `rolling-code`
+
+**Defeating something built to stop you.** These have a real defence in front of
+them, and it is not there for show: an alive counter and a checksum, an attempt
+limiter, a message authentication code you cannot forge. You get past them by
+understanding exactly what each one covers, and going at what it does not.
+
+> `integrity` · `security-access` · `reflash` · `secoc` · `pivot`
+
+If you are new to this, `sniffing` is the first challenge of the first module
+and asks nothing of you but curiosity. If you have done bus work before, start
+at `spoofing` or `iso-tp` and come back for anything that turns out to be
+unfamiliar.
