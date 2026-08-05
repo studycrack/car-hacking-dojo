@@ -8,8 +8,8 @@ supposed to be able to tell someone, months later, what went wrong.
 
 It works just as well for telling someone what *you* did. Scan a controller's
 services and you have written a line in its logbook for every request it did
-not like. Fuzz one and you have filled its fault memory with your own
-reconnaissance, signed and timestamped.
+not like. Fuzz one and you have filled its fault memory with the shape of your own
+reconnaissance.
 
 Two services matter here.
 

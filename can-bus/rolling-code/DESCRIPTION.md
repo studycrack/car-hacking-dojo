@@ -34,6 +34,14 @@ have a recording of them.
 Capture a press, work out what you are holding, and open the car with a code
 the owner never spent.
 
+Opening it is not quite the whole thing. The car will let you in with any valid
+unspent code, including one you watched go past a heartbeat ago --- and that
+proves nothing, because the owner standing there pressing the button would look
+exactly the same. What you are demonstrating is a *replay*: something recorded
+earlier still opening the car long after the moment it belonged to. So let the
+capture sit for several seconds before you send it. Unlock too quickly and the
+doors will open and nothing else will happen.
+
 `candump -l vcan0` writes what it sees to a log file rather than to the screen,
 and `canplayer -I <logfile>` puts it back on the bus. Capturing and replaying
 is the shape of this attack, and worth doing that way once even though a single

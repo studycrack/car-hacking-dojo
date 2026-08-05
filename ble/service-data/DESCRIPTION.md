@@ -5,7 +5,7 @@ that.
 **Service Data**, AD type `0x16`, says *this data belongs to this service*. The
 structure begins with the 16-bit service UUID, and the payload follows it:
 
-    0f 16 6f fd 00 70 77 6e ...
+    12 16 6f fd 00 70 77 6e ...
     ^  ^  ^^^^^ ^^^^^^^^^^^^^
     |  |  UUID  the actual data
     |  type 0x16

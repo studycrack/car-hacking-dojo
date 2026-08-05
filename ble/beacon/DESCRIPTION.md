@@ -10,12 +10,14 @@ The payload is a sequence of **AD structures**, each one a length byte, a type
 byte, and its data:
 
     02 01 06        length 2, type 0x01 (Flags), value 06
-    0b ff 99 04 ..  length 11, type 0xFF (Manufacturer Specific Data)
+    14 ff 99 04 ..  length 20, type 0xFF (Manufacturer Specific Data)
 
-`hcitool lescan` prints the name and nothing else, because a name is all a scan
-list needs. To see the payload itself:
+`hcitool lescan` gives you an address, and a name if the device advertises one.
+This one does not: a beacon that exists to broadcast a payload has no reason to
+spend its budget on a name, so it comes back `(unknown)`. To see the payload
+itself:
 
-    hcidump
+    hcidump --passive
 
 Manufacturer Specific Data, type `0xFF`, is the escape hatch: two bytes of
 company identifier and then whatever the vendor likes. It is where beacons put
@@ -27,5 +29,5 @@ bytes**, in total, including every structure. What this sensor has to say does
 not fit in thirty-one bytes, so it does what real beacons do and sends a piece
 at a time, cycling. Each fragment is prefixed with its position.
 
-Watch long enough to see them all, then put them in order. `hcidump -n` will
-report more than once for you.
+Watch long enough to see them all, then put them in order. `hcidump --passive -n`
+will report more than once for you.

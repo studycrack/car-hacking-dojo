@@ -24,10 +24,17 @@ moving becomes obvious in about two seconds. Quit with `q`.
 More than one identifier tracks that needle, and the difference matters. One of
 them is what the cluster *listens to*; another is the cluster *announcing* what
 it is currently showing, for the benefit of the rest of the car. Only the first
-one is worth attacking. Injecting on the second changes nothing at all, which
-is itself a useful signal about which is which.
+one is worth attacking.
 
-Then lie to the cluster. Make it display **exactly 133 km/h**.
+Be careful how you check your work, because that display is not a witness. It
+draws whatever the announcement frame says, so injecting on the announcement
+paints 133 on the screen while the cluster itself has believed nothing --- and
+it is the cluster believing you that matters here. One honest way to tell the
+two apart: the announcement carries engine RPM next to the speed, because it is
+the cluster reporting everything on its face at once. A wheel speed sensor has
+no idea what the engine is doing.
+
+Then lie to the cluster. Make it believe the car is doing **exactly 133 km/h**.
 
 The catch is that the wheel speed sensor is still on the bus, still reporting
 the truth, five times a second. The cluster believes whichever frame arrived

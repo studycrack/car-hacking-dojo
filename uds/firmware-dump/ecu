@@ -52,7 +52,7 @@ def build_image():
 
     place(0x0400, b"[diag] session %02x entered\x00")
     place(0x0420, b"[diag] supported services: 10 22 23 27 31 3E BF\x00")
-    place(0x0460, b"[diag] svc BF: engineering unlock, arg = 8 byte token\x00")
+    place(0x0460, b"[diag] svc BF: engineering unlock, arg = 01 + 8 byte token\x00")
     place(0x04A0, b"[diag] svc BF: token mismatch, access refused\x00")
     place(0x04E0, b"[diag] svc BF: granted, dumping unit secret\x00")
 

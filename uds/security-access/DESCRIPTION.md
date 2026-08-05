@@ -18,11 +18,11 @@ Sixteen bits is 65,536 possibilities, which a computer exhausts in seconds.
 The standard's answer to that is an attempt limiter --- and this ECU has one.
 After **three** wrong keys it answers `7F 27 36` (exceedNumberOfAttempts) and
 then refuses to talk security at all for ten seconds, which stretches an
-exhaustive search out to weeks.
+exhaustive search out to days.
 
 But look carefully at *what* resets that counter. Requesting a diagnostic
 session is a perfectly ordinary thing for a tester to do, and this ECU treats
-a fresh session as a fresh start --- new seed, no failed attempts, no lockout.
+a fresh session as a fresh start --- no failed attempts, no lockout.
 Nothing about UDS says the attempt counter must survive a session change, and
 on this ECU it does not.
 

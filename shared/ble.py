@@ -333,6 +333,10 @@ class Server:
             if not attribute.writable:
                 return self.error(opcode, handle, ERR_WRITE_NOT_PERMITTED)
             value = pdu[3:]
+            # a Write Request carries opcode and handle alongside the value, so
+            # anything longer than the MTU less three cannot be sent as one PDU
+            if len(value) > DEFAULT_MTU - 3:
+                return self.error(opcode, handle, ERR_INVALID_ATTRIBUTE_LENGTH)
             if attribute.on_write:
                 result = attribute.on_write(value, connection)
                 if result is not None:

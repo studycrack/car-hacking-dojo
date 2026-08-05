@@ -27,7 +27,7 @@ be reachable from the OBD-II port.
 And then off the wire entirely, to the Bluetooth the car answers on: the phone
 that unlocks it, the tyre sensors, the aftermarket dongle somebody left in the
 OBD-II port --- which is bridged onto the very bus you spent the first two
-modules attacking. The last challenge is that bridge.
+modules attacking. The capstone is that bridge.
 
 Everything here is a simulation. Your workspace has a virtual CAN interface,
 `vcan0`, and peripherals advertising over a virtual radio, both attached to a
@@ -37,10 +37,10 @@ frame formats, the protocols and the attacks are the real ones.
 ## Where to start
 
 The modules are grouped by interface, not by difficulty, because within each one
-the challenges build on each other --- the rolling code challenge assumes the
-capture discipline the one before it teaches, and the checksum challenge assumes
-the signal reverse engineering from the one before that. Work down a module and
-the ramp is already there.
+the challenges build on each other --- the rolling code challenge needs both the
+capture discipline and the frame forging that come before it, and the checksum
+challenge needs the signal reverse engineering. Work down a module and the ramp
+is already there.
 
 What follows is the other view: the same thirty-four challenges sorted by what
 they ask of you, so you can judge where to begin and what you are in for.

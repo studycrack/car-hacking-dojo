@@ -14,9 +14,9 @@ byte after the service id declares them:
 the low one is how many carry the *address*. So `14` means a four-byte address
 followed by a one-byte length, and
 
-    23 14 08 00 00 00 40
+    23 14 20 00 00 00 10
 
-asks for `0x40` bytes from `0x08000000`. A positive response comes back as
+asks for `0x10` bytes from `0x20000000`. A positive response comes back as
 `63` followed by the data.
 
 Three things stand between you and a dump.

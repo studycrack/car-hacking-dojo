@@ -8,8 +8,9 @@ Start by finding it. A peripheral that wants to be connected to *advertises*:
 
     hcitool lescan
 
-That is a passive act. The device is broadcasting its name to the street
-whether or not anyone is listening, and you have not touched it yet.
+That is all it takes. The device is broadcasting itself to the street, and it
+will answer a scan from anyone in range --- no pairing, no key, nobody asked
+for permission.
 
 Now connect and look at what it exposes. BLE's data model, **GATT**, is a flat
 table of attributes. Services group them, characteristics hold the values, and
