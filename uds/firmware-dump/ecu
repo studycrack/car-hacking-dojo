@@ -1,0 +1,141 @@
+#!/run/dojo/bin/python3 -u
+import random
+import sys
+
+sys.path.insert(0, "/challenge")
+import isotp
+import vcan
+
+REQUEST_ID = 0x7E0
+RESPONSE_ID = 0x7E8
+
+DIAGNOSTIC_SESSION_CONTROL = 0x10
+READ_DATA_BY_IDENTIFIER = 0x22
+READ_MEMORY_BY_ADDRESS = 0x23
+TESTER_PRESENT = 0x3E
+ENGINEERING_UNLOCK = 0xBF
+
+EXTENDED_SESSION = 0x03
+
+NRC_SERVICE_NOT_SUPPORTED = 0x11
+NRC_INCORRECT_LENGTH = 0x13
+NRC_CONDITIONS_NOT_CORRECT = 0x22
+NRC_REQUEST_OUT_OF_RANGE = 0x31
+NRC_INVALID_KEY = 0x35
+
+FLASH_BASE = 0x08000000
+FLASH_SIZE = 0x2000
+MAX_READ = 0x40
+
+TOKEN = b"DEV0PEN1"
+
+bus = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+session = 0x01
+
+vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+vcan.transmit_periodically(bus, 0x1A0, lambda: bytes([0, 0, 0, 0, 0, 0, 0, 0]), hz=5)
+
+
+def build_image():
+    rng = random.Random(0xC0FFEE)
+    image = bytearray(rng.randrange(256) for _ in range(FLASH_SIZE))
+
+    def place(offset, data):
+        image[offset:offset + len(data)] = data
+
+    place(0x0000, bytes([0x00, 0x40, 0x00, 0x20, 0xD5, 0x01, 0x00, 0x08]))
+    place(0x0010, b"TCU-8841-002\x00")
+    place(0x0020, b"bootloader v3.14 build 20240917\x00")
+    place(0x0040, b"STMicroelectronics STM32F105RC\x00")
+
+    place(0x0400, b"[diag] session %02x entered\x00")
+    place(0x0420, b"[diag] supported services: 10 22 23 27 31 3E BF\x00")
+    place(0x0460, b"[diag] svc BF: engineering unlock, arg = 8 byte token\x00")
+    place(0x04A0, b"[diag] svc BF: token mismatch, access refused\x00")
+    place(0x04E0, b"[diag] svc BF: granted, dumping unit secret\x00")
+
+    place(0x0800, b"ENGTOKEN")
+    place(0x0808, TOKEN)
+    place(0x0810, b"\x00\x00\x00\x00\x00\x00\x00\x00")
+
+    place(0x0900, b"CALIB\x00")
+    place(0x0910, b"idle_rpm=800\x00")
+    place(0x0920, b"rev_limit=6500\x00")
+    place(0x0930, b"vin=KMHFG4JG7CA123456\x00")
+    return bytes(image)
+
+
+image = build_image()
+
+
+def read_memory(request):
+    if session != EXTENDED_SESSION:
+        return bytes([0x7F, request[0], NRC_CONDITIONS_NOT_CORRECT])
+    if len(request) < 2:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+
+    address_length = request[1] & 0x0F
+    size_length = request[1] >> 4
+    if not address_length or not size_length or len(request) != 2 + address_length + size_length:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+
+    address = int.from_bytes(request[2:2 + address_length], "big")
+    size = int.from_bytes(request[2 + address_length:], "big")
+
+    if not size or size > MAX_READ:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    if address < FLASH_BASE or address + size > FLASH_BASE + FLASH_SIZE:
+        return bytes([0x7F, request[0], NRC_REQUEST_OUT_OF_RANGE])
+
+    offset = address - FLASH_BASE
+    return bytes([0x63]) + image[offset:offset + size]
+
+
+def engineering_unlock(request):
+    if session != EXTENDED_SESSION:
+        return bytes([0x7F, request[0], NRC_CONDITIONS_NOT_CORRECT])
+    if len(request) != 10 or request[1] != 0x01:
+        return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+    if request[2:] != TOKEN:
+        return bytes([0x7F, request[0], NRC_INVALID_KEY])
+    return bytes([0xFF, 0x01]) + flag.encode()
+
+
+def handle(request):
+    global session
+    if request[0] == DIAGNOSTIC_SESSION_CONTROL:
+        if len(request) != 2:
+            return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+        session = request[1] & 0x7F
+        return bytes([0x50, request[1], 0x00, 0x32, 0x01, 0xF4])
+    if request[0] == TESTER_PRESENT:
+        return bytes([0x7E, 0x00])
+    if request[0] == READ_DATA_BY_IDENTIFIER:
+        if len(request) != 3:
+            return bytes([0x7F, request[0], NRC_INCORRECT_LENGTH])
+        did = request[1] << 8 | request[2]
+        records = {0xF190: b"KMHFG4JG7CA123456", 0xF18C: b"TCU-8841-002 (STM32F105RC)"}
+        if did not in records:
+            return bytes([0x7F, request[0], NRC_REQUEST_OUT_OF_RANGE])
+        return bytes([0x62, request[1], request[2]]) + records[did]
+    if request[0] == READ_MEMORY_BY_ADDRESS:
+        return read_memory(request)
+    if request[0] == ENGINEERING_UNLOCK:
+        return engineering_unlock(request)
+    return bytes([0x7F, request[0], NRC_SERVICE_NOT_SUPPORTED])
+
+
+frames = bus.frames()
+while True:
+    try:
+        request = isotp.recv(bus, REQUEST_ID, RESPONSE_ID, timeout=3600, frames=frames)
+    except TimeoutError:
+        continue
+    if not request:
+        continue
+    try:
+        isotp.send(bus, RESPONSE_ID, REQUEST_ID, handle(request), timeout=10, frames=frames)
+    except TimeoutError:
+        continue

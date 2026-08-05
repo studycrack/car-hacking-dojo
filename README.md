@@ -16,6 +16,7 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | Diagnostics and UDS | `iso-tp` | segmentation and flow control, by hand |
 | | `ecu-discovery` | address and data-identifier enumeration |
 | | `security-access` | bypassing a SecurityAccess attempt limiter via session reset, then brute forcing a 16-bit key |
+| | `firmware-dump` | ReadMemoryByAddress: locating flash, probing the read ceiling, dumping it, and mining the image for an undocumented service |
 
 ## The bus is emulated in userspace
 

@@ -30,3 +30,7 @@ resources:
   - id: security-access
     type: challenge
     name: Defeating SecurityAccess
+
+  - id: firmware-dump
+    type: challenge
+    name: Dumping the Firmware
