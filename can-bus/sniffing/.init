@@ -1,5 +1,7 @@
 #!/bin/bash
 
+chmod 700 /challenge/ecu
+
 touch /run/challenge.log
 chmod 600 /run/challenge.log
 

@@ -33,13 +33,18 @@ def main():
     parser = argparse.ArgumentParser(
         usage="gatttool -b ADDRESS [--primary | --characteristics | --char-desc |\n"
               "                        --char-read -a HANDLE |\n"
-              "                        --char-write-req -a HANDLE -n HEX]")
+              "                        --char-write-req -a HANDLE -n HEX]\n"
+              "                       [--listen [--timeout SECONDS]]")
     parser.add_argument("-b", "--device", required=True, metavar="ADDRESS")
     parser.add_argument("--primary", action="store_true")
     parser.add_argument("--characteristics", action="store_true")
     parser.add_argument("--char-desc", action="store_true")
     parser.add_argument("--char-read", action="store_true")
     parser.add_argument("--char-write-req", action="store_true")
+    parser.add_argument("--listen", action="store_true",
+                        help="stay connected and print notifications and indications")
+    parser.add_argument("--timeout", type=float, default=10.0, metavar="SECONDS",
+                        help="give up after this long with nothing arriving (default 10)")
     parser.add_argument("-a", "--handle")
     parser.add_argument("-n", "--value")
     arguments = parser.parse_args()
@@ -85,6 +90,14 @@ def main():
         except ble.ATTError as error:
             sys.exit(f"Characteristic Write Request failed: {error}")
         print("Characteristic value was written successfully")
+        if not arguments.listen:
+            return
+
+    if arguments.listen:
+        for opcode, handle, value in client.events_stream(timeout=arguments.timeout, kind=True):
+            label = "Indication  " if opcode == ble.ATT_HANDLE_VALUE_IND else "Notification"
+            print(f"{label} handle = 0x{handle:04x} value: "
+                  + " ".join(f"{byte:02x}" for byte in value))
         return
 
     parser.print_usage()

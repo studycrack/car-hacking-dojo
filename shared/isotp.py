@@ -17,6 +17,16 @@ FLOW_STATUS_CONTINUE = 0x0
 FLOW_STATUS_WAIT = 0x1
 FLOW_STATUS_OVERFLOW = 0x2
 
+# ISO 15765-2 N_Cr: how long a receiver waits for the next consecutive frame
+# before giving up on the burst. This is a property of the protocol, not of
+# how long the caller is willing to wait for a request to arrive -- an ECU
+# listening all day still abandons an unfinished burst in a second.
+CONSECUTIVE_FRAME_TIMEOUT = 1.0
+
+# how often to come up for air while waiting, so that a deadline is still
+# noticed on a bus where nothing at all is being transmitted
+POLL_INTERVAL = 0.2
+
 
 def pad(data):
     return bytes(data) + b"\x00" * (8 - len(data))
@@ -34,9 +44,14 @@ def send(bus, tx_id, rx_id, payload, timeout=2.0, frames=None):
 
     separation_time = 0
     deadline = time.time() + timeout
-    for can_id, data in frames:
+    previous_poll, bus.poll_interval = bus.poll_interval, POLL_INTERVAL
+    for item in frames:
         if time.time() > deadline:
+            bus.poll_interval = previous_poll
             raise TimeoutError("no flow control frame")
+        if item is None:
+            continue
+        can_id, data = item
         if can_id != rx_id or len(data) < 3 or data[0] >> 4 != FLOW_CONTROL:
             continue
         if data[0] & 0x0F == FLOW_STATUS_WAIT:
@@ -45,7 +60,9 @@ def send(bus, tx_id, rx_id, payload, timeout=2.0, frames=None):
         separation_time = data[2]
         break
     else:
+        bus.poll_interval = previous_poll
         raise TimeoutError("no flow control frame")
+    bus.poll_interval = previous_poll
 
     separation = separation_time / 1000.0 if separation_time <= 0x7F else 0.0001
     index = 1
@@ -61,25 +78,48 @@ def send(bus, tx_id, rx_id, payload, timeout=2.0, frames=None):
 def recv(bus, rx_id, tx_id, timeout=5.0, frames=None):
     frames = frames if frames is not None else bus.frames()
     deadline = time.time() + timeout
-    for can_id, data in frames:
+    previous_poll, bus.poll_interval = bus.poll_interval, POLL_INTERVAL
+    for item in frames:
         if time.time() > deadline:
+            bus.poll_interval = previous_poll
             raise TimeoutError("no response")
+        if item is None:
+            continue
+        can_id, data = item
         if can_id != rx_id or not data:
             continue
         kind = data[0] >> 4
         if kind == SINGLE_FRAME:
+            bus.poll_interval = previous_poll
             return data[1:1 + (data[0] & 0x0F)]
         if kind != FIRST_FRAME:
             continue
         total = ((data[0] & 0x0F) << 8) | data[1]
         payload = bytearray(data[2:8])
         bus.send(tx_id, pad([(FLOW_CONTROL << 4) | FLOW_STATUS_CONTINUE, 0x00, 0x00]))
-        for can_id, data in frames:
+        # a burst that never finishes must be abandoned rather than waited on
+        # forever: a First Frame promising more than its sender goes on to send
+        # would otherwise leave this receiver deaf to every later request
+        expected = 1
+        segment_deadline = time.time() + CONSECUTIVE_FRAME_TIMEOUT
+        for item in frames:
+            if time.time() > segment_deadline:
+                break
+            if item is None:
+                continue
+            can_id, data = item
             if can_id != rx_id or not data or data[0] >> 4 != CONSECUTIVE_FRAME:
                 continue
+            if data[0] & 0x0F != expected & 0x0F:
+                break
+            expected += 1
             payload += data[1:]
+            segment_deadline = time.time() + CONSECUTIVE_FRAME_TIMEOUT
             if len(payload) >= total:
+                bus.poll_interval = previous_poll
                 return bytes(payload[:total])
+        deadline = time.time() + timeout
+    bus.poll_interval = previous_poll
     raise TimeoutError("no response")
 
 

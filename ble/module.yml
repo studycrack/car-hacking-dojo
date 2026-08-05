@@ -23,7 +23,23 @@ resources:
       stopping you enumerating the whole table.
 
       Your workspace has the standard Linux Bluetooth tooling: `hcitool` to
-      scan for what is advertising, `gatttool` to connect and talk to it.
+      scan for what is advertising, `gatttool` to connect and talk to it, and
+      `hcidump` to watch the air itself. Use `gatttool --listen` to stay
+      connected once you have subscribed to something.
+
+      Those cover most of what follows but not all of it: a shell command that
+      exits after one reply is an awkward way to hold a subscription open
+      while you poke the peripheral with something else, or to queue a write
+      across several packets. The stack the tools are built on is importable,
+      and some of these are far easier through it:
+
+          import sys
+          sys.path.insert(0, "/challenge")
+          import ble
+
+          client = ble.Client("aa:bb:cc:dd:ee:ff")
+          for handle, value in client.events_stream(timeout=5):
+              print(hex(handle), value)
 
   - type: header
     content: Walking a GATT table

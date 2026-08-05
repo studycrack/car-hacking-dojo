@@ -54,6 +54,11 @@ class Bus:
                 time.sleep(0.05)
         self.buffer = b""
         self.send_lock = threading.Lock()
+        # when set, frames() yields None if nothing arrives within the interval,
+        # so a reader waiting on a deadline can notice time passing on a bus
+        # that has gone quiet. Left off by default: every other caller wants to
+        # block until there is genuinely a frame.
+        self.poll_interval = None
 
     def send(self, can_id, data):
         line = (format_frame(can_id, bytes(data)) + "\n").encode()
@@ -73,7 +78,15 @@ class Bus:
     def frames(self):
         while True:
             while b"\n" not in self.buffer:
-                chunk = self.sock.recv(4096)
+                try:
+                    if self.poll_interval is not None:
+                        self.sock.settimeout(self.poll_interval)
+                    chunk = self.sock.recv(4096)
+                except (socket.timeout, TimeoutError):
+                    yield None
+                    continue
+                finally:
+                    self.sock.settimeout(None)
                 if not chunk:
                     return
                 self.buffer += chunk
@@ -131,12 +144,19 @@ class Hub:
     def run(self):
         while True:
             for key, events in self.selector.select():
-                if key.data is None:
-                    self.accept()
-                elif events & selectors.EVENT_READ:
-                    self.read(key.fileobj)
-                elif events & selectors.EVENT_WRITE:
-                    self.flush(key.fileobj)
+                try:
+                    if key.data is None:
+                        self.accept()
+                    elif events & selectors.EVENT_READ:
+                        self.read(key.fileobj)
+                    elif events & selectors.EVENT_WRITE:
+                        self.flush(key.fileobj)
+                except Exception:
+                    # the socket is world writable, so anything a client can
+                    # put on the wire must cost that client its connection at
+                    # worst, never the bus everyone else is sharing
+                    if key.data is not None:
+                        self.drop(key.fileobj)
 
     def accept(self):
         client, _ = self.server.accept()
@@ -181,7 +201,10 @@ class Hub:
         self.filters[client] = rules
 
     def broadcast(self, sender, line):
-        can_id = int(line.split(b"#")[0], 16) if b"#" in line else None
+        try:
+            can_id = int(line.split(b"#")[0], 16) if b"#" in line else None
+        except ValueError:
+            return
         for client in list(self.outbox):
             if client is sender:
                 continue

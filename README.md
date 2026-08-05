@@ -10,11 +10,11 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | The CAN Bus | `sniffing` | reading a bus with `candump` | 10m |
 | | `filtering` | identifier filters, payload structure | 20m |
 | | `fob-capture` | capturing a one-shot transmission: attach the capture before triggering the event | 15m |
-| | `rolling-code` | replaying a rolling code the receiver never consumed | 40m |
 | | `injection` | forging frames with `cansend` against a live controller | 25m |
+| | `rolling-code` | replaying a rolling code the receiver never consumed | 40m |
 | | `spoofing` | reverse engineering a signal's identifier, offset, and scale, then out-transmitting the real sensor | 50m |
-| | `integrity` | recovering an alive counter and checksum from captured traffic to forge frames a validating module accepts | 55m |
 | | `dbc` | reading a DBC file and letting cantools do the Motorola bit packing | 30m |
+| | `integrity` | recovering an alive counter and checksum from captured traffic to forge frames a validating module accepts | 55m |
 | | `secoc` | forging an authenticated frame without the key, by changing a field the MAC was never computed over | 60m |
 | Diagnostics and UDS | `iso-tp` | segmentation and flow control, by hand | 45m |
 | | `ecu-discovery` | address and data-identifier enumeration | 30m |
@@ -80,8 +80,12 @@ learns the real tools, and what they learn transfers to a real SocketCAN
 interface unchanged. See `image/README.md`.
 
 `shared/real-tools/` holds the one-line wrappers that put the shim in front of
-each binary; `shared/tools/` still holds python implementations of `canascii`
-and `isotpreq`, which have no can-utils equivalent for what they do here.
+each binary. `shared/tools/` holds python implementations: `canascii` and
+`isotpreq`, which have no can-utils equivalent for what they do here;
+`gatttool`, `hcitool` and `hcidump`, which are the whole of the Bluetooth
+tooling, since there is no radio for BlueZ to talk to; and `candump` and
+`cansend`, which nothing links to any more but which `image/README.md` still
+documents as the fallback if the shim ever has to come out.
 
 ## Bluetooth is emulated the same way
 
@@ -128,8 +132,10 @@ Each challenge directory symlinks the shared code it needs:
 The DOJO resolves symlinks when it copies a challenge into a container
 (`resolved_tar` in `dojo_plugin/utils/__init__.py`), inlining the target's
 contents, so there is exactly one copy of the bus implementation in the repo.
-Symlinks must stay inside the dojo root, and must point at files rather than
-directories --- a symlinked directory is copied as an empty directory.
+Symlinks must stay inside the dojo root. A symlinked directory is copied with
+its contents, because the symlink branch of `resolved_tar` calls `tar.add`
+without `recursive=False` --- unlike the branch for ordinary files, which
+passes it.
 
 Every file placed in `/challenge` is made `root:root 4755` by the DOJO, so
 anything a student should not read --- the ECU firmware, and `isotp.py` in the

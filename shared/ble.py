@@ -305,6 +305,14 @@ class Server:
         return struct.pack("<BBHB", ATT_ERROR_RSP, opcode, handle, code)
 
     def handle_pdu(self, pdu, connection):
+        try:
+            return self.dispatch(pdu, connection)
+        except struct.error:
+            # a request that stops mid-field is a malformed request, not a
+            # reason for the peripheral to stop answering everyone
+            return self.error(pdu[0], 0x0000, ERR_INVALID_PDU)
+
+    def dispatch(self, pdu, connection):
         if not pdu:
             return None
         opcode = pdu[0]
@@ -457,9 +465,14 @@ class Server:
         # nothing has asked for it yet.
         lines = f"adv={self.advertising.encode().hex()}\n"
         path = advertising_path(self.address)
-        with open(path, "w") as handle:
+        # written to one side and moved into place, because a rotating
+        # advertiser that truncates first lets a scan catch the empty window
+        # and report a device with nothing in its payload
+        pending = f"{path}.{os.getpid()}"
+        with open(pending, "w") as handle:
             handle.write(lines)
-        os.chmod(path, 0o644)
+        os.chmod(pending, 0o644)
+        os.replace(pending, path)
 
     def _rotate(self):
         """Re-advertise on a cycle.
@@ -520,7 +533,10 @@ class Server:
                     buffers[connection] = buffers[connection][2 + length:]
                     response = self.handle_pdu(pdu, connection)
                     if response:
-                        connection.sendall(struct.pack("<H", len(response)) + response)
+                        try:
+                            connection.sendall(struct.pack("<H", len(response)) + response)
+                        except OSError:
+                            break
 
 
 class Client:
@@ -684,7 +700,7 @@ class Client:
     def confirm(self):
         self.sock.sendall(struct.pack("<HB", 1, ATT_HANDLE_VALUE_CFM))
 
-    def events_stream(self, timeout=5.0, confirm=True):
+    def events_stream(self, timeout=5.0, confirm=True, kind=False):
         """Yield (handle, value) as the peripheral pushes them.
 
         An indication is answered with a confirmation unless the caller asks
@@ -696,7 +712,8 @@ class Client:
                 pdu = self.events.pop(0)
                 if pdu[0] == ATT_HANDLE_VALUE_IND and confirm:
                     self.confirm()
-                yield struct.unpack("<H", pdu[1:3])[0], pdu[3:]
+                handle = struct.unpack("<H", pdu[1:3])[0]
+                yield (pdu[0], handle, pdu[3:]) if kind else (handle, pdu[3:])
                 deadline = time.time() + timeout
             remaining = deadline - time.time()
             if remaining <= 0:
@@ -721,6 +738,8 @@ class ATTError(Exception):
         ERR_READ_NOT_PERMITTED: "Attribute can't be read",
         ERR_WRITE_NOT_PERMITTED: "Attribute can't be written",
         ERR_INVALID_PDU: "Invalid PDU",
+        ERR_INVALID_OFFSET: "Invalid offset",
+        ERR_INVALID_ATTRIBUTE_LENGTH: "Invalid attribute length",
         ERR_ATTRIBUTE_NOT_FOUND: "No attribute found within the given range",
         ERR_UNLIKELY_ERROR: "Request attribute has encountered an unlikely error",
         ERR_UNSUPPORTED_GROUP_TYPE: "Attribute type is not a supported grouping",

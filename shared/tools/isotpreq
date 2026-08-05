@@ -33,10 +33,17 @@ def main():
                  "   eg: isotpreq vcan0 7E0 7E8 22F190")
 
     interface, tx_id, rx_id, request = sys.argv[1:]
+
+    try:
+        tx, rx, payload = int(tx_id, 16), int(rx_id, 16), bytes.fromhex(request)
+    except ValueError:
+        sys.exit(f"isotpreq: {tx_id!r}, {rx_id!r} must be hex identifiers and "
+                 f"{request!r} an even number of hex digits")
+
     bus = vcan.attach(interface, "isotpreq")
 
     try:
-        response = isotp.request(bus, int(tx_id, 16), int(rx_id, 16), bytes.fromhex(request))
+        response = isotp.request(bus, tx, rx, payload)
     except TimeoutError:
         sys.exit("isotpreq: no response")
 
