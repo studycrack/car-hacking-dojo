@@ -1,0 +1,55 @@
+#!/run/dojo/bin/python3 -u
+"""Send one ISO-TP request and print the response.
+
+This handles frame segmentation and flow control for you, so that you can
+concentrate on the diagnostic protocol carried on top of it.
+"""
+
+import sys
+
+sys.path.insert(0, "/challenge")
+import isotp
+import vcan
+
+NEGATIVE_RESPONSE_CODES = {
+    0x11: "serviceNotSupported",
+    0x12: "subFunctionNotSupported",
+    0x13: "incorrectMessageLengthOrInvalidFormat",
+    0x22: "conditionsNotCorrect",
+    0x24: "requestSequenceError",
+    0x31: "requestOutOfRange",
+    0x33: "securityAccessDenied",
+    0x35: "invalidKey",
+    0x36: "exceedNumberOfAttempts",
+    0x37: "requiredTimeDelayNotExpired",
+    0x7E: "subFunctionNotSupportedInActiveSession",
+    0x7F: "serviceNotSupportedInActiveSession",
+}
+
+
+def main():
+    if len(sys.argv) != 5:
+        sys.exit("usage: isotpreq INTERFACE TX_ID RX_ID REQUEST_HEX\n"
+                 "   eg: isotpreq vcan0 7E0 7E8 22F190")
+
+    interface, tx_id, rx_id, request = sys.argv[1:]
+    try:
+        bus = vcan.Bus(interface, timeout=3)
+    except OSError:
+        sys.exit(f"isotpreq: interface {interface} is down (is the challenge running?)")
+
+    try:
+        response = isotp.request(bus, int(tx_id, 16), int(rx_id, 16), bytes.fromhex(request))
+    except TimeoutError:
+        sys.exit("isotpreq: no response")
+
+    print(response.hex().upper())
+    if len(response) >= 3 and response[0] == 0x7F:
+        name = NEGATIVE_RESPONSE_CODES.get(response[2], "unknown")
+        print(f"negative response to service {response[1]:02X}: {response[2]:02X} ({name})", file=sys.stderr)
+        sys.exit(1)
+    print("'" + vcan.ascii_repr(response) + "'")
+
+
+if __name__ == "__main__":
+    main()

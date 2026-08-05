@@ -1,0 +1,30 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+
+def main():
+    if len(sys.argv) != 3 or "#" not in sys.argv[2]:
+        sys.exit("usage: cansend INTERFACE ID#DATA\n   eg: cansend vcan0 19B#02FF0000")
+
+    interface, frame = sys.argv[1], sys.argv[2]
+    try:
+        can_id, data = vcan.parse_frame(frame)
+    except ValueError:
+        sys.exit(f"cansend: invalid frame '{frame}' (expected hex, eg 19B#02FF0000)")
+    if can_id > 0x7FF:
+        sys.exit(f"cansend: invalid identifier {can_id:X} (standard identifiers are 11 bits)")
+    if len(data) > 8:
+        sys.exit(f"cansend: invalid payload length {len(data)} (a CAN frame carries at most 8 bytes)")
+
+    try:
+        bus = vcan.Bus(interface, timeout=3)
+    except OSError:
+        sys.exit(f"cansend: interface {interface} is down (is the challenge running?)")
+    bus.send(can_id, data)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,15 @@
+#!/run/dojo/bin/python3 -u
+import sys
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+CLUSTER_ID = 0x3D1
+
+bus = vcan.Bus("vcan0", timeout=3)
+for can_id, data in bus.frames():
+    if can_id != CLUSTER_ID or len(data) < 4:
+        continue
+    speed = (data[0] << 8 | data[1]) / 100
+    rpm = data[2] << 8 | data[3]
+    sys.stdout.write(f"\r  SPEED {speed:7.2f} km/h    RPM {rpm:5d}    ")
