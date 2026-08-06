@@ -1,10 +1,9 @@
-Everything so far has fit in a single frame. Eight bytes is not much, and a
-diagnostic tool needs to ask real questions and get real answers back --- a
-17-character VIN does not fit in eight bytes, let alone a firmware image.
+Everything so far has fit in a single frame. A 17-character VIN does not fit in
+eight bytes, let alone a firmware image.
 
-**ISO-TP** (ISO 15765-2) is the transport layer that solves this, and it is
-what every diagnostic session in every car on the road runs on top of. It uses
-the first byte (or two) of a payload as a protocol control field:
+**ISO-TP** (ISO 15765-2) is the transport layer that solves this, and every
+diagnostic session in every car on the road runs on top of it. It uses the
+first byte (or two) of a payload as a protocol control field:
 
 | First nibble | Frame type | Layout |
 | --- | --- | --- |

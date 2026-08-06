@@ -1,8 +1,8 @@
-Reading a controller's memory is the single most productive thing a diagnostic
-session can do for an attacker. Not because the memory itself is interesting,
-but because firmware is where every assumption a manufacturer made is written
-down: the services they built and never documented, the constants they compiled
-in, the strings they left in a debug build that shipped.
+Reading a controller's memory is the most productive thing a diagnostic session
+can do for an attacker, because firmware is where every assumption a
+manufacturer made is written down: the services they built and never
+documented, the constants they compiled in, the strings they left in a debug
+build that shipped.
 
 UDS service `0x23`, **ReadMemoryByAddress**, is the front door. Its request is
 a little unusual, because the address and length widths are not fixed --- the

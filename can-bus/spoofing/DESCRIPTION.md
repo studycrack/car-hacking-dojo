@@ -1,6 +1,6 @@
-When you unlocked the doors you were handed the message layout. In the field
-nobody hands it to you. Identifiers and byte offsets are specific to a
-manufacturer, a model, and often a model year, and they are not published.
+When you unlocked the doors you were handed the message layout. Nobody hands it
+to you in the field: identifiers and byte offsets are specific to a
+manufacturer, a model and often a model year, and they are not published.
 
 So you reverse engineer them, by correlating something you can *see* with
 something you can *capture*. Start the instrument cluster display:
@@ -12,27 +12,25 @@ that display is moving. Find the payload bytes that track the needle, and work
 out how the number is encoded while you are there --- it is not simply km/h, so
 compare a byte pair against the displayed value and recover the scale factor.
 
-`candump` will show you this if you stare long enough. Nobody stares. The tool
-for the job is:
+`candump` scrolls far too fast to read. The tool for the job is:
 
     cansniffer -c vcan0
 
-It keeps one line per identifier instead of scrolling, and colours the bytes
-that just changed. A bus where most traffic is constant and one signal is
-moving becomes obvious in about two seconds. Quit with `q`.
+It keeps one line per identifier instead of scrolling and colours the bytes
+that just changed, so one moving signal in otherwise constant traffic is
+obvious in seconds. Quit with `q`.
 
 More than one identifier tracks that needle, and the difference matters. One of
 them is what the cluster *listens to*; another is the cluster *announcing* what
 it is currently showing, for the benefit of the rest of the car. Only the first
 one is worth attacking.
 
-Be careful how you check your work, because that display is not a witness. It
-draws whatever the announcement frame says, so injecting on the announcement
-paints 133 on the screen while the cluster itself has believed nothing --- and
-it is the cluster believing you that matters here. One honest way to tell the
-two apart: the announcement carries engine RPM next to the speed, because it is
-the cluster reporting everything on its face at once. A wheel speed sensor has
-no idea what the engine is doing.
+Be careful how you check your work: that display is not a witness. It draws
+whatever the announcement frame says, so injecting on the announcement paints
+133 on the screen while the cluster itself has believed nothing --- and it is
+the cluster believing you that counts. One honest way to tell them apart is
+that the announcement carries engine RPM next to the speed. A wheel speed
+sensor has no idea what the engine is doing.
 
 Then lie to the cluster. Make it believe the car is doing **exactly 133 km/h**.
 

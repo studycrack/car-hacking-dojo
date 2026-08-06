@@ -1,5 +1,5 @@
-The instrument cluster you lied to believed whatever arrived. Plenty of
-cars on the road still do. Newer ones increasingly do not.
+The instrument cluster you lied to believed whatever arrived. Newer modules
+increasingly do not.
 
 The countermeasure is not cryptography --- there is no room for a signature in
 eight bytes, and no time for one at 500 kbit/s. Instead, safety-relevant
@@ -11,9 +11,8 @@ messages carry two small fields, borrowed from AUTOSAR's End-to-End protection:
 - A **checksum** over the payload. A receiver that sees a wrong one knows the
   frame was not built by the real sender.
 
-Neither stops someone who understands the scheme. Both stop someone who does
-not, which is most of the point --- and which is why the first thing you do
-against a modern bus is work out how its messages are protected.
+Neither stops someone who understands the scheme, which is why the first thing
+you do against a modern bus is work out how its messages are protected.
 
 This car's steering assist module accepts torque requests on identifier
 `0x1F5`, and rejects anything whose integrity fields do not hold up. You are

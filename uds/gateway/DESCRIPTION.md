@@ -1,5 +1,5 @@
-Everything so far has assumed one bus, with everything on it. No manufacturer
-builds a car that way, and has not for twenty years.
+Everything so far has assumed one bus with everything on it. No manufacturer
+builds a car that way.
 
 A modern vehicle has several buses --- powertrain, chassis, comfort,
 infotainment --- kept apart on purpose, because the parts that can stop the car
