@@ -1,9 +1,6 @@
-Everything so far has fit in a single frame. A 17-character VIN does not fit in
-eight bytes, let alone a firmware image.
-
-**ISO-TP** (ISO 15765-2) is the transport layer that solves this, and every
-diagnostic session in every car on the road runs on top of it. It uses the
-first byte (or two) of a payload as a protocol control field:
+A 17-character VIN does not fit in eight bytes. **ISO-TP** (ISO 15765-2) is the
+transport layer that solves this, and every diagnostic session runs on top of
+it. It uses the first byte (or two) of a payload as a protocol control field:
 
 | First nibble | Frame type | Layout |
 | --- | --- | --- |
@@ -32,8 +29,7 @@ Watch `0x7E8` while you do. You will get a First Frame, and then nothing,
 because the ECU is waiting for you to tell it to continue. Send the Flow
 Control frame yourself, and collect the rest.
 
-Once you can do that, ask the same ECU for data identifier `0xF1AB`, which is
-where this manufacturer parks its bootloader unlock token. The ECU is patient
---- it will wait half a minute for your Flow Control frame, so you have time to
-type. While it is waiting it is busy with you and will not answer anything
-else, so if it has gone quiet, give it a moment and ask again.
+Then ask the same ECU for data identifier `0xF1AB`, the bootloader unlock
+token. It waits half a minute for your Flow Control frame, so you have time to
+type --- but while it waits it is busy with you and answers nothing else. If it
+has gone quiet, give it a moment and ask again.

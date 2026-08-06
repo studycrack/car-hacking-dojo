@@ -1,47 +1,39 @@
 When you unlocked the doors you were handed the message layout. Nobody hands it
-to you in the field: identifiers and byte offsets are specific to a
-manufacturer, a model and often a model year, and they are not published.
+to you in the field. You reverse engineer it by correlating something you can
+*see* with something you can *capture*.
 
-So you reverse engineer them, by correlating something you can *see* with
-something you can *capture*. Start the instrument cluster display:
+Start the instrument cluster display:
 
     /challenge/dashboard
 
-and, in a second terminal, watch the bus. The car is rolling, so the speed on
-that display is moving. Find the payload bytes that track the needle, and work
-out how the number is encoded while you are there --- it is not simply km/h, so
-compare a byte pair against the displayed value and recover the scale factor.
+The car is rolling, so the needle is moving. Find the payload bytes that track
+it, and work out the encoding --- it is not simply km/h, so compare a byte pair
+against the displayed value and recover the scale factor.
 
-`candump` scrolls far too fast to read. The tool for the job is:
+`candump` scrolls too fast to read. Use:
 
     cansniffer -c vcan0
 
-It keeps one line per identifier instead of scrolling and colours the bytes
-that just changed, so one moving signal in otherwise constant traffic is
-obvious in seconds. Quit with `q`.
+It keeps one line per identifier and colours the bytes that just changed. Quit
+with `q`.
 
-More than one identifier tracks that needle, and the difference matters. One of
-them is what the cluster *listens to*; another is the cluster *announcing* what
-it is currently showing, for the benefit of the rest of the car. Only the first
-one is worth attacking.
+More than one identifier tracks the needle. One is what the cluster *listens
+to*; another is the cluster *announcing* what it shows. Only the first is worth
+attacking, and the display will not tell you which is which: it draws whatever
+the announcement says, so injecting on the announcement paints 133 on the
+screen while the cluster has believed nothing. One honest way to tell them
+apart is that the announcement carries engine RPM next to the speed, and a
+wheel speed sensor has no idea what the engine is doing.
 
-Be careful how you check your work: that display is not a witness. It draws
-whatever the announcement frame says, so injecting on the announcement paints
-133 on the screen while the cluster itself has believed nothing --- and it is
-the cluster believing you that counts. One honest way to tell them apart is
-that the announcement carries engine RPM next to the speed. A wheel speed
-sensor has no idea what the engine is doing.
+Make the cluster believe the car is doing **exactly 133 km/h**.
 
-Then lie to the cluster. Make it believe the car is doing **exactly 133 km/h**.
+The real sensor is still reporting the truth five times a second, and the
+cluster believes whichever frame arrived last, so a single injected frame is
+overwritten at once. Your frames have to drown it out for three seconds
+straight.
 
-The catch is that the wheel speed sensor is still on the bus, still reporting
-the truth, five times a second. The cluster believes whichever frame arrived
-most recently, so a single injected frame is overwritten almost immediately.
-You have to hold the bus --- your frames need to drown the real ones out for
-three seconds straight.
-
-A shell loop around `cansend` spawns a process per frame and will struggle to
-keep up. Talk to the bus directly from Python instead:
+A shell loop around `cansend` spawns a process per frame and will not keep up.
+Talk to the bus from Python:
 
     import sys
     sys.path.insert(0, "/challenge")
@@ -49,5 +41,3 @@ keep up. Talk to the bus directly from Python instead:
 
     bus = vcan.Bus("vcan0")
     bus.send(0x123, bytes([0x11, 0x22]))
-
-Hold the needle at 133 and the cluster will give up the flag.
