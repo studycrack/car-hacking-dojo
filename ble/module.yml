@@ -52,7 +52,15 @@ resources:
 
       If you would rather use the library you would use against a real
       peripheral, `bleak` is installed and works here --- these workspaces
-      answer on D-Bus as `org.bluez` the way a genuine controller would:
+      answer on D-Bus as `org.bluez` the way a genuine controller would.
+
+      One thing to know before you try it. There are two python interpreters
+      on this machine: the one `python3` finds, which carries the standard
+      library, and `/usr/bin/python3`, which is the one the workspace image
+      was built with. `bleak` was installed into the second, so run it by
+      name --- `import ble` above works under either:
+
+          /usr/bin/python3 your_script.py
 
           import asyncio
           from bleak import BleakClient, BleakScanner
