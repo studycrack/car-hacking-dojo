@@ -28,6 +28,7 @@ RUN apt-get update \
         python3-pip \
         xxd \
         bettercap \
+        dbus \
  && rm -rf /var/lib/apt/lists/*
 
 # cantools pulls python-can in with it. Installing the distribution's
@@ -40,3 +41,7 @@ RUN pip3 install --no-cache-dir --break-system-packages cantools bleak \
 COPY --from=build /build/canshim.so /opt/canshim.so
 COPY wrappers/ /opt/can-wrappers/
 RUN chmod 755 /opt/can-wrappers/*
+
+# the bus that shared/bluez.py serves org.bluez on, so bleak has something to
+# talk to. The stock system policy only lets the bluetooth user own that name.
+COPY dbus.conf /opt/dbus.conf

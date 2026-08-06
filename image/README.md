@@ -77,25 +77,30 @@ repository, and it is those that set `LD_PRELOAD` and exec the real binary.
 `/opt/can-wrappers/` in the image does the same thing and is there for use
 inside the container, but nothing in the repository may point at it.
 
-## bleak and bettercap
-
-Both are installed, and neither can reach this dojo's peripherals.
+## bleak works; bettercap does not
 
 The Bluetooth here is emulated in userspace: a peripheral is a unix socket
 under `/run/bluetooth`, and `shared/tools/{hcitool,gatttool,hcidump}` speak to
-it directly. `bleak` goes through BlueZ over D-Bus and `bettercap`'s BLE
-modules open an HCI socket, so both want a controller the container does not
-have --- the same missing `CAP_NET_ADMIN` that made `canshim.c` necessary on
-the CAN side, plus no Bluetooth hardware to give it.
+it directly. Neither `bleak` nor `bettercap` knows any of that exists.
 
-There is no shim for this. Making `bleak` work would mean standing up a fake
-`org.bluez` on the system bus and exposing the emulated peripherals through
-it, which is a much larger piece of work than intercepting a handful of
-socket calls.
+`bleak` is made to work by `shared/bluez.py`, which every BLE challenge's
+`.init` starts alongside a private `dbus-daemon` (`/opt/dbus.conf`). The shim
+owns the name `org.bluez` and presents the object tree BlueZ presents --- an
+adapter, a device per peripheral, a GATT tree per connection --- implementing
+each method against `ble.Client` underneath. `bleak` cannot tell the
+difference: scanning, connecting, reads (including the Read Blob continuation
+for long values), descriptors, notifications and Prepare/Execute long writes
+all behave as they would against a real controller.
 
-So they are here as the real tools, for reference and for anyone pointing a
-workspace at actual hardware. Every BLE challenge is solved with the shipped
-tools or with `ble.py`, and nothing in the dojo asks for either of these.
+The `canshim.c` trick does not transfer here, which is why this is a service
+rather than a `LD_PRELOAD`. `bleak` is not making socket calls to a device
+node; it is making method calls to a name on the system bus. So the shim is
+that name.
+
+`bettercap` is a different matter. Its BLE modules open an HCI socket
+directly, underneath the D-Bus layer the shim provides, so it still finds no
+adapter. It is installed as the real tool, for reference and for a workspace
+pointed at actual hardware. Nothing in the dojo asks for it.
 
 ## What the image does not solve
 

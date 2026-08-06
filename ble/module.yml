@@ -46,6 +46,19 @@ resources:
           for handle, value in client.events_stream(timeout=5):
               print(hex(handle), value)
 
+      If you would rather use the library you would use against a real
+      peripheral, `bleak` is installed and works here --- these workspaces
+      answer on D-Bus as `org.bluez` the way a genuine controller would:
+
+          import asyncio
+          from bleak import BleakClient, BleakScanner
+
+          async def main():
+              for device in await BleakScanner.discover():
+                  print(device.address, device.name)
+
+          asyncio.run(main())
+
   - type: header
     content: Walking a GATT table
 

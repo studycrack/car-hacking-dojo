@@ -9,3 +9,6 @@ chmod 600 /run/challenge.log
 /run/dojo/bin/setsid /challenge/vcan.py vcan0 --private </dev/null >>/run/challenge.log 2>&1 &
 /run/dojo/bin/setsid /challenge/ecu </dev/null >>/run/challenge.log 2>&1 &
 /run/dojo/bin/setsid /challenge/dongle </dev/null >>/run/challenge.log 2>&1 &
+mkdir -p /run/dbus
+/usr/bin/dbus-daemon --config-file=/opt/dbus.conf --nofork </dev/null >>/run/challenge.log 2>&1 &
+/run/dojo/bin/setsid /challenge/bluez.py </dev/null >>/run/challenge.log 2>&1 &
