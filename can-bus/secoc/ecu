@@ -91,13 +91,23 @@ for can_id, data in bus.frames():
         continue
 
     with state:
-        if not accepted_freshness < value <= accepted_freshness + 0x40:
+        # the counter is one byte and wraps, so the window has to be measured
+        # modulo 256. Comparing the values directly stops accepting anything at
+        # all the first time 0xFF rolls over to 0x00, including this module's
+        # own frames, and it never recovers
+        ahead = (value - accepted_freshness) & 0xFF
+        if not 0 < ahead <= 0x40:
             last_result = RESULT_STALE_FRESHNESS
             continue
         accepted_freshness = value
         last_result = RESULT_ACCEPTED
         locked = payload == LOCK
         forged = value not in authentic
+        # a value behind the window can never be replayed, and remembering it
+        # forever would eventually mark all 256 of them authentic, leaving
+        # nothing to forge with
+        authentic.intersection_update(
+            (value + step) & 0xFF for step in range(1, 0x41))
 
     if payload == UNLOCK and forged:
         bus.send_text(FLAG_ID, flag)
