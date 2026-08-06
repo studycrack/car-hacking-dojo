@@ -1,4 +1,4 @@
-# attribute table은 characteristic 목록보다 크다
+# characteristic 목록에 없는 descriptor 읽기
 
 이 단계의 목표는 다음과 같습니다:
 *  characteristic 하나는 최소 두 개의 attribute로 이루어집니다.

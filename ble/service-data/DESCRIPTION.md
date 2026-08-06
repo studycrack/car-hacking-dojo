@@ -1,4 +1,4 @@
-# AD 구조는 타입마다 layout이 다르다
+# Service Data 구조에서 payload만 뽑아내기
 
 이 단계의 목표는 다음과 같습니다:
 *  Manufacturer Specific Data는 회사 식별자 2바이트 뒤가 자유였습니다.

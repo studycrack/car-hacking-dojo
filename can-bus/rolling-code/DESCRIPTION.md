@@ -1,4 +1,4 @@
-# rolling code replay 공격
+# 소비되지 않은 rolling code 골라내 차 열기
 
 이 단계의 목표는 다음과 같습니다:
 *  rolling code는 포브와 수신기가 비밀값과 counter를 공유하는 방식입니다.

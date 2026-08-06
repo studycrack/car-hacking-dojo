@@ -1,4 +1,4 @@
-# subscribe를 먼저, 그다음에 request
+# subscribe를 먼저 걸고 request 보내기
 
 이 단계의 목표는 다음과 같습니다:
 *  이제 subscribe도 해 봤고 쓰기도 해 봤습니다. 이 모듈은 둘 다 필요합니다.

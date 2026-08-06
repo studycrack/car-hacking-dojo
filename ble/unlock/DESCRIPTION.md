@@ -1,4 +1,4 @@
-# characteristic에 쓰기, 그리고 권한 오류 읽기
+# 권한 오류를 읽어 가며 characteristic에 쓰기
 
 이 단계의 목표는 다음과 같습니다:
 *  characteristic은 읽기만 하는 것이 아닙니다. 쓰기가 되는 것도 있습니다.

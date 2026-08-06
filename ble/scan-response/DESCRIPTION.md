@@ -1,4 +1,4 @@
-# scan response — 물어봐야 오는 두 번째 payload
+# active scan으로 scan response 받아내기
 
 이 단계의 목표는 다음과 같습니다:
 *  31바이트는 넉넉하지 않습니다. 그래서 규격은 31바이트를 한 번 더 줍니다.

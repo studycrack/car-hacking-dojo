@@ -1,4 +1,4 @@
-# indication은 confirmation을 받아야 이어진다
+# confirmation을 보내며 indication 끝까지 받기
 
 이 단계의 목표는 다음과 같습니다:
 *  notification은 보내고 잊는 방식입니다. 도착하지 않아도 아무도 모릅니다.

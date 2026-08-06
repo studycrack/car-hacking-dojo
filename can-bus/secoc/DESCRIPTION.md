@@ -1,4 +1,4 @@
-# SecOC — key 없이 인증된 frame 위조하기
+# SecOC key 없이 인증된 frame 위조하기
 
 이 단계의 목표는 다음과 같습니다:
 *  **SecOC**는 중요한 frame에 **MAC**(메시지 인증 코드)을 붙입니다.
