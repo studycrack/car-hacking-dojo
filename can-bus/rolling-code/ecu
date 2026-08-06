@@ -26,8 +26,13 @@ bus = vcan.Bus("vcan0")
 fob = vcan.Bus("vcan0")
 flag = open("/flag").read().strip()
 
+# the counter goes out as two bytes, so it is a 16 bit quantity everywhere:
+# letting it grow past 0xFFFF here would leave code_for() deriving codes from a
+# number the receiver can never reconstruct from the wire
+COUNTER_MASK = 0xFFFF
+
 fob_counter = random.randrange(0x1000, 0x2000)
-accepted_counter = fob_counter - 1
+accepted_counter = (fob_counter - 1) & COUNTER_MASK
 transmitted = {}
 deaf_until = 0.0
 unlocks = 0
@@ -54,7 +59,7 @@ def press_button():
     for _ in range(REPEATS):
         transmitted[fob_counter] = time.time()
         fob.send(FOB_ID, transmission(fob_counter))
-        fob_counter += 1
+        fob_counter = (fob_counter + 1) & COUNTER_MASK
         time.sleep(0.05)
 
 
@@ -81,7 +86,9 @@ for can_id, data in bus.frames():
     if code != code_for(counter):
         last_result = RESULT_BAD_CODE
         continue
-    if not accepted_counter < counter <= accepted_counter + WINDOW:
+    # measured modulo the counter width, so that the window still means "ahead
+    # of what was last accepted" across the point where 0xFFFF becomes 0x0000
+    if not 0 < (counter - accepted_counter) & COUNTER_MASK <= WINDOW:
         last_result = RESULT_STALE_COUNTER
         continue
 
