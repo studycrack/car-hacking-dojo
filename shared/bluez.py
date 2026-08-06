@@ -36,6 +36,7 @@ import asyncio
 import os
 import sys
 import threading
+import time
 
 sys.path.insert(0, "/challenge")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -476,6 +477,8 @@ class Shim:
         self.clients = {}
         self.paths = {}
         self.notifiers = {}
+        self.pumps = {}
+        self.locks = {}
         self.discovery = None
 
     async def run(self):
@@ -519,10 +522,15 @@ class Shim:
             path = device_path(address)
             name = ble.local_name(structures)
             if path in self.devices:
-                # a device already on the bus is reported again by saying its
-                # advertisement changed, which is what a fresh sighting is
+                # report a device already on the bus only when what it is
+                # broadcasting has actually changed. Announcing every pass
+                # would be a fresh sighting every 0.3s, which buries a console
+                # like bluetoothctl under updates that say nothing new
                 device = self.devices[path]
+                before = (dict(device._manufacturer), dict(device._service_data))
                 device.absorb(structures)
+                if before == (device._manufacturer, device._service_data):
+                    continue
                 self.manager.refresh(path, device)
                 device.emit_properties_changed({
                     "RSSI": -55,
@@ -545,6 +553,7 @@ class Shim:
             return
         client = await asyncio.to_thread(ble.Client, device.address)
         self.clients[path] = client
+        self.locks[path] = threading.Lock()
         device.set_state(connected=True)
         self.manager.refresh(path, device)
         await self._publish_gatt(device, client, path)
@@ -608,52 +617,68 @@ class Shim:
     def _client(self, device):
         return self.clients[device_path(device.address)]
 
+    def _guarded(self, device, call, *arguments):
+        """Run one operation on the device's single connection.
+
+        Everything shares that one socket -- reads, writes, and the thread
+        draining notifications -- so they take turns.
+        """
+        with self.locks[device_path(device.address)]:
+            return call(*arguments)
+
     async def read(self, device, handle):
-        return await asyncio.to_thread(self._client(device).read, handle)
+        return await asyncio.to_thread(self._guarded, device, self._client(device).read, handle)
 
     async def write(self, device, handle, value):
         client = self._client(device)
         # BlueZ splits a value too long for one packet across Prepare Writes
         # without the caller having to know, so this does too
-        if len(value) > ble.DEFAULT_MTU - 3:
-            return await asyncio.to_thread(client.write_long, handle, value)
-        return await asyncio.to_thread(client.write, handle, value)
+        call = client.write_long if len(value) > ble.DEFAULT_MTU - 3 else client.write
+        return await asyncio.to_thread(self._guarded, device, call, handle, value)
 
     async def start_notify(self, characteristic):
         if characteristic.cccd_handle is None:
             raise ble.ATTError(ble.ERR_WRITE_NOT_PERMITTED)
+        device = characteristic.device
+        path = device_path(device.address)
         indicate = "indicate" in characteristic._flags
 
-        # a dedicated connection per subscription: ble.Client is a single
-        # request/response socket, and a reader parked on it would collide with
-        # every ReadValue the caller makes in the meantime
-        client = await asyncio.to_thread(ble.Client, characteristic.device.address)
-        await asyncio.to_thread(client.subscribe, characteristic.cccd_handle, indicate)
+        # the subscription has to live on the same connection the caller writes
+        # over: a peripheral that answers whoever asked sends its notification
+        # to that connection, and a subscription made on a second one would
+        # never hear it
+        await asyncio.to_thread(self._guarded, device, self._client(device).subscribe,
+                                characteristic.cccd_handle, indicate)
+        self.notifiers.setdefault(path, set()).add(characteristic)
+        if path not in self.pumps:
+            stop = threading.Event()
+            thread = threading.Thread(target=self._pump, args=(path, stop), daemon=True)
+            self.pumps[path] = (stop, thread)
+            thread.start()
 
-        stop = threading.Event()
-        thread = threading.Thread(
-            target=self._pump, args=(client, characteristic, stop), daemon=True)
-        self.notifiers[characteristic] = (client, stop, thread)
-        thread.start()
-
-    def _pump(self, client, characteristic, stop):
-        while not stop.is_set():
+    def _pump(self, path, stop):
+        """Drain notifications between the caller's own requests."""
+        client, lock = self.clients.get(path), self.locks.get(path)
+        while not stop.is_set() and client:
             try:
-                for handle, value in client.events_stream(timeout=0.5):
-                    if stop.is_set():
-                        return
-                    if handle == characteristic.handle:
-                        self.loop.call_soon_threadsafe(characteristic.push, value)
+                with lock:
+                    for _, handle, value in client.events_stream(timeout=0.1, kind=True):
+                        for characteristic in list(self.notifiers.get(path, ())):
+                            if characteristic.handle == handle:
+                                self.loop.call_soon_threadsafe(characteristic.push, value)
             except OSError:
                 return
+            time.sleep(0.02)
 
     async def stop_notify(self, characteristic):
-        entry = self.notifiers.pop(characteristic, None)
-        if not entry:
+        path = device_path(characteristic.device.address)
+        subscribed = self.notifiers.get(path, set())
+        subscribed.discard(characteristic)
+        if subscribed:
             return
-        client, stop, thread = entry
-        stop.set()
-        await asyncio.to_thread(client.close)
+        entry = self.pumps.pop(path, None)
+        if entry:
+            entry[0].set()
 
 
 if __name__ == "__main__":
