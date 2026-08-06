@@ -97,6 +97,21 @@ rather than a `LD_PRELOAD`. `bleak` is not making socket calls to a device
 node; it is making method calls to a name on the system bus. So the shim is
 that name.
 
+`bluetoothctl` gets the same benefit for free, because it is a D-Bus client
+too: `scan on`, `connect`, and the `gatt` menu all work against the shim. It
+prints one `Unable to open mgmt_socket` line on startup --- that socket is for
+adapter configuration, and nothing below it needs one.
+
+The rest of the `bluez` package is deleted in the Dockerfile. `hcitool`,
+`gatttool`, `hciconfig` and the other legacy tools are deprecated upstream and
+drive an HCI socket that does not exist here, and the first two would shadow
+or be shadowed by the emulations in `shared/tools` depending on how `PATH`
+resolved. `bluetoothd` goes too: it would contend for the `org.bluez` name the
+shim owns, and its D-Bus activation file would let something start it by
+accident. `btmon` and `btmgmt` survive because they are current tools rather
+than legacy ones, but they want the same HCI and management sockets and will
+say so plainly when run.
+
 `bettercap` was installed here for a while and has been taken out again,
 because nothing could make it work and a tool that silently finds nothing is
 worse than a tool that is absent. The reasoning, so that it does not get added

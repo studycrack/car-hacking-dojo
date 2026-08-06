@@ -27,6 +27,10 @@ resources:
       `hcidump` to watch the air itself. Use `gatttool --listen` to stay
       connected once you have subscribed to something.
 
+      `bluetoothctl`, the BlueZ shell you would use on a real machine, is here
+      too and works the same way: `scan on`, then `connect`, then its `gatt`
+      menu.
+
       Those cover most of what follows but not all of it. A shell command that
       exits after one reply is an awkward way to hold a subscription open while
       you poke the peripheral with something else, or to queue a write across
