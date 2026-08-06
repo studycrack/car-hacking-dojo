@@ -31,20 +31,24 @@ RUN apt-get update \
         bluez \
  && rm -rf /var/lib/apt/lists/*
 
-# bluez is here for bluetoothctl, which drives org.bluez over D-Bus and so
-# works against shared/bluez.py exactly as it would against a real controller.
+# bluez is installed for exactly one binary: bluetoothctl, which drives
+# org.bluez over D-Bus and so works against shared/bluez.py the way it would
+# against a real controller. Everything else in the package goes.
 #
-# The rest of the package is not wanted. hcitool, gatttool and friends are
-# deprecated upstream and talk to an HCI socket that does not exist here, and
-# the first two would collide by name with the emulations in shared/tools that
-# the challenges actually use. bluetoothd has to go as well: it would contend
-# for the org.bluez name the shim owns, and its D-Bus activation file would let
-# something start it by accident.
+# hcitool, gatttool and the other legacy tools are deprecated upstream and talk
+# to an HCI socket that does not exist here, and the first two would collide by
+# name with the emulations in shared/tools that the challenges are written
+# around. btmon and btmgmt are current rather than legacy, but they want the
+# same HCI and management sockets, and no challenge asks for either -- the
+# packet view they would give is what the hcidump emulation already provides.
+# bluetoothd would contend for the org.bluez name the shim owns, and its D-Bus
+# activation file would let something start it by accident.
 RUN rm -f /usr/bin/hcitool /usr/bin/gatttool /usr/bin/hciconfig \
           /usr/bin/sdptool /usr/bin/rfcomm /usr/bin/ciptool \
           /usr/bin/hciattach /usr/bin/btattach /usr/bin/l2ping \
           /usr/bin/l2test /usr/bin/rctest /usr/bin/bluemoon \
           /usr/bin/hex2hcd /usr/bin/obexctl /usr/bin/mpris-proxy \
+          /usr/bin/btmon /usr/bin/btmgmt \
           /usr/sbin/bluetoothd /usr/libexec/bluetooth/bluetoothd \
           /usr/share/dbus-1/system-services/org.bluez.service
 

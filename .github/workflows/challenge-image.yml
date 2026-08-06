@@ -33,4 +33,4 @@ jobs:
         with:
           context: image
           push: true
-          tags: ghcr.io/${{ github.repository }}/challenge-can:v8
+          tags: ghcr.io/${{ github.repository }}/challenge-can:v9
