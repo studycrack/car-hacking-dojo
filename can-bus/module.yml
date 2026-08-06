@@ -33,7 +33,7 @@ resources:
     name: Catching a One-Shot
 
   - type: header
-    content: "replay와 위조: 하나를 따라 하는 것이 아니라 둘을 조합하기"
+    content: frame replay하고 위조하기
 
   - id: injection
     type: challenge
@@ -44,7 +44,7 @@ resources:
     name: Rolling Codes
 
   - type: header
-    content: "바이트의 뜻 알아내기: DBC 없이, 그리고 있을 때"
+    content: 바이트의 뜻 알아내기
 
   - id: spoofing
     type: challenge
@@ -55,7 +55,7 @@ resources:
     name: Reading the Database
 
   - type: header
-    content: "방어 뚫기: 무엇을 지키고 무엇을 지키지 않는지 이해하기"
+    content: checksum과 MAC 방어 뚫기
 
   - id: integrity
     type: challenge

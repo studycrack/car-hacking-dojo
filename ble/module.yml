@@ -92,7 +92,7 @@ resources:
     name: An Interlock That Counts
 
   - type: header
-    content: "event: peripheral이 먼저 말한다"
+    content: peripheral이 밀어 주는 event 받기
 
   - id: notify
     type: challenge
@@ -115,7 +115,7 @@ resources:
     name: A Property That Lies
 
   - type: header
-    content: "advertising: 아무도 연결하기 전에"
+    content: 연결하지 않고 advertising 읽기
 
   - id: beacon
     type: challenge
@@ -130,7 +130,7 @@ resources:
     name: Typed Advertising Data
 
   - type: header
-    content: "discovery 너머: 펌웨어가 말하지 않기로 한 것"
+    content: 펌웨어가 감춘 attribute 찾아내기
 
   - id: hidden-handles
     type: challenge

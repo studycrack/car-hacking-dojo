@@ -26,7 +26,7 @@ resources:
     name: Segmented Transport
 
   - type: header
-    content: "무엇이 있는지 찾기: 열거, 그리고 열거가 남기는 기록"
+    content: 무엇이 있는지 열거하기
 
   - id: ecu-discovery
     type: challenge
