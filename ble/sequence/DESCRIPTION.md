@@ -1,17 +1,19 @@
-A single write opened the vault. Anything that matters is usually guarded by
-more than one.
+# 순서를 세는 interlock 통과하기
 
-This is the immobiliser. It expects a **sequence**: several writes, in a
-specific order, and it counts.
+이 단계의 목표는 다음과 같습니다:
+*  앞의 금고는 한 번 쓰는 것으로 열렸습니다. 중요한 것은 보통 그렇게 두지 않습니다.
+*  이것은 이모빌라이저입니다.
+*  **정해진 순서대로 여러 번** 써야 합니다. 몇 번째까지 왔는지 세고 있습니다.
+*  단계를 틀리면 무시하지 않고 **처음으로 되돌립니다.**
+*  틀린 단계를 봐주면 각 자리를 따로 대입할 수 있게 되기 때문입니다.
 
-Its status characteristic tells you where in that sequence it believes it is.
-Read it after each write and you can watch the state machine move --- you are
-not guessing, you are writing, observing, and letting the peripheral tell you
-whether that step counted.
+과제:
+*  attribute table에 있는 정비 지침 발췌를 읽고 단계를 확인하세요.
+*  순서대로 끝까지 진행하세요.
 
-Get a step wrong and it resets to the beginning. An interlock that forgives a
-wrong step would let you brute force each position independently while the
-earlier ones stayed satisfied.
+힌트:
+*  상태 characteristic이 지금 몇 번째 단계인지 알려 줍니다.
+*  쓸 때마다 상태를 읽어 보세요. state machine이 움직이는 것이 보입니다.
+*  찍어 맞히는 것이 아닙니다. 쓰고, 관찰하고, 인정됐는지 확인받는 방식입니다.
 
-The workshop manual extract in the attribute table says what the steps are.
-Drive it to the end.
+끝까지 도달하면 상태 characteristic이 플래그를 내놓습니다!

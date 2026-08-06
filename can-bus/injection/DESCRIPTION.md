@@ -1,21 +1,28 @@
-A CAN frame carries no evidence of who sent it, so any controller that can
-reach the bus can originate any message on it.
+# frame을 위조해 문 열기
 
-`cansend` puts a frame on the bus, in the notation `candump` prints:
+이 단계의 목표는 다음과 같습니다:
+*  CAN frame에는 발신자 정보가 없습니다.
+*  버스에 닿으면 누구든 어떤 메시지든 보낼 수 있습니다.
+*  이 차의 바디 컨트롤 모듈(BCM)은 아래 두 ID를 씁니다.
 
-    cansend vcan0 19B#0200ABCD
-
-That is identifier `0x19B` carrying `02 00 AB CD`.
-
-This car's body control module speaks the following:
-
-| Identifier | Direction | Layout |
+| ID | 방향 | layout |
 | --- | --- | --- |
-| `0x19A` | BCM broadcast | byte 0: `01` locked / `00` unlocked. bytes 2-3: current session counter, big endian. |
-| `0x19B` | BCM receive | byte 0: `02` to unlock. byte 1: `FF` for all doors. bytes 2-3: the session counter the BCM is currently advertising. |
+| `0x19A` | BCM 송신 | 바이트 0: `01` 잠김 / `00` 열림. 바이트 2-3: session counter(big-endian) |
+| `0x19B` | BCM 수신 | 바이트 0: `02` 열기. 바이트 1: `FF` 전체 도어. 바이트 2-3: 현재 session counter |
 
-The session counter is broadcast in the clear and rotates every thirty seconds,
-so read it, then act on it.
+*  session counter는 평문으로 broadcast됩니다. 30초마다 바뀝니다.
 
-Unlock the doors and the BCM announces the flag on the bus. Keep a `candump`
-running in a second terminal while you work.
+과제:
+*  BCM이 알리는 session counter를 읽으세요.
+*  그 값으로 `0x19B` frame을 만들어 문을 여세요.
+
+힌트:
+*  `cansend`는 `candump`와 같은 표기를 씁니다.
+
+        cansend vcan0 19B#0200ABCD
+
+*  위 예시는 `0x19B`에 `02 00 AB CD`를 실어 보냅니다.
+*  counter가 30초마다 바뀝니다. 읽고 바로 보내세요.
+*  다른 터미널에 `candump`를 띄워 두세요.
+
+문이 열리면 플래그가 버스로 나옵니다!

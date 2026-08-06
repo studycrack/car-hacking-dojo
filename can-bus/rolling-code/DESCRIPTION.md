@@ -1,31 +1,32 @@
-A **rolling code** fob and its receiver share a secret and a counter. Each press
-sends the counter plus a value derived from it; the receiver checks the
-derivation, then refuses that counter and anything below it ever again.
+# rolling code replay 공격
 
-    /challenge/press-fob
+이 단계의 목표는 다음과 같습니다:
+*  rolling code는 포브와 수신기가 비밀값과 counter를 공유하는 방식입니다.
+*  누를 때마다 counter와, 그 counter로 만든 값을 함께 보냅니다.
+*  수신기는 계산을 검증한 뒤 그 counter와 그보다 낮은 값을 다시 받지 않습니다.
+*  그래서 그대로 녹음해 다시 틀면 무시당합니다.
+*  포브는 한 번만 전송하지 않습니다. 전파가 유실되기 쉬워서 같은 의도를 여러 번 내보냅니다.
+*  각각 다른 counter를 씁니다.
+*  수신기는 처음 해독한 것 하나만 처리합니다. 그리고 잠시 듣기를 멈춥니다.
+*  그래서 burst의 나머지는 소비되지 않고 남습니다.
 
-The body control module reports on `0x19A`: byte 0 is `01` while locked, byte 1
-counts unlocks, byte 2 is what it made of the last fob frame --- `01` unlocked,
-`02` counter already used, `03` code did not match.
+과제:
+*  포브를 눌러 burst를 캡처하세요.
 
-A fob does not transmit once. Radio is lossy, so a press sends the same intent
-several times, each with its own counter. The receiver acts on the first it
-decodes and then stops listening for a moment, so the doors do not toggle. The
-rest of that burst was never consumed: those counters are unspent, still ahead
-of where the receiver stopped, and you have a recording of them.
+        /challenge/press-fob
 
-Open the car with a code the owner never spent.
+*  소비되지 않은 code를 골라내세요.
+*  그 code로 차를 여세요.
 
-Two things will otherwise cost you the flag:
+힌트:
+*  BCM은 `0x19A`로 상태를 알립니다. 바이트 0은 잠김 여부, 바이트 1은 열린 횟수입니다.
+*  바이트 2는 판정입니다. `01` 열림, `02` 이미 쓴 counter, `03` code 불일치.
+*  `candump -l vcan0`은 로그 파일로 기록합니다. `canplayer -I <로그파일>`이 다시 흘립니다.
+*  **캡처한 뒤 몇 초 기다렸다가 보내세요.** 방금 지나간 code로도 문은 열립니다.
+*  하지만 그것으로는 아무것도 증명되지 않습니다. 주인이 누른 것과 구분되지 않습니다.
+*  너무 빨리 보내면 문만 열리고 끝납니다.
+*  **로그를 통째로 replay하지 마세요.** 버튼을 누른 frame까지 들어 있습니다.
+*  그것을 다시 흘리면 포브가 또 눌립니다. counter가 녹음한 범위 너머로 밀려납니다.
+*  보낼 frame 하나만 남기고 잘라내세요.
 
-- **Let the capture sit for several seconds before sending it.** Any valid
-  unspent code opens the doors, including one you watched go past a moment ago,
-  and that proves nothing. What you are demonstrating is a replay. Unlock too
-  quickly and the doors open and nothing else happens.
-- **Do not replay the whole log.** It holds the frame that pressed the button,
-  and replaying that presses the fob again, spending fresh codes and leaving
-  the receiver's counter past everything you recorded. Cut the log down to the
-  one frame you mean to send.
-
-`candump -l vcan0` writes what it sees to a log file; `canplayer -I <logfile>`
-puts it back on the bus.
+시간이 지난 녹음으로 차가 열리면 플래그가 버스로 나옵니다!

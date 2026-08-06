@@ -1,21 +1,29 @@
-**SecOC** puts a message authentication code on the frames that matter. Sender
-and receiver share a key; each transmission carries the payload, a **freshness
-value** that must never go backwards, and a truncated MAC.
+# SecOC — key 없이 인증된 frame 위조하기
 
-Doors are commanded on `0x1B0`: two bytes of payload, one of freshness, three
-of MAC. The controller reports itself on `0x1B1` --- byte 0 locked, byte 1 the
-freshness it last accepted, byte 2 what it made of the last frame: `01`
-accepted, `02` MAC did not verify, `03` freshness was not ahead.
+이 단계의 목표는 다음과 같습니다:
+*  **SecOC**는 중요한 frame에 **MAC**(메시지 인증 코드)을 붙입니다.
+*  송신자와 수신자가 key를 공유합니다.
+*  전송할 때마다 payload, **freshness 값**, 잘린 MAC이 함께 실립니다.
+*  freshness는 절대 뒤로 가면 안 되는 값입니다.
+*  이 차의 바디 컨트롤러는 `0x1B0`으로 도어 명령을 받습니다.
+*  payload 2바이트, freshness 1바이트, MAC 3바이트입니다.
+*  상태는 `0x1B1`로 알립니다. 바이트 0은 잠김 여부, 바이트 1은 마지막으로 받아들인 freshness입니다.
+*  바이트 2는 판정입니다. `01` 수락, `02` MAC 검증 실패, `03` freshness가 앞서 있지 않음.
 
-The car locks itself periodically, and the fob still works:
+과제:
+*  차가 스스로 잠그는 모습을 여러 번 관찰하세요. 포브도 그대로 동작합니다.
 
-    /challenge/press-fob
+        /challenge/press-fob
 
-You cannot compute a MAC without the key. Attack what it was computed over
-instead: a MAC is only a promise about the bytes that went into it, and any
-field left out is one you are free to change.
+*  MAC이 무엇을 덮고 무엇을 덮지 않는지 알아내세요.
+*  주인이 부탁한 적 없는 차의 문을 여세요.
 
-Watch the car lock itself several times. The payload is identical each time and
-the freshness is not. Look at what the MAC does.
+힌트:
+*  key가 없으면 MAC을 계산할 수 없습니다.
+*  암호 자체를 공격하지 마세요. **그 MAC이 무엇을 대상으로 계산되었는지**를 공격하세요.
+*  MAC은 계산에 들어간 바이트에 대한 약속일 뿐입니다.
+*  계산에서 빠진 필드는 마음대로 바꿔도 됩니다.
+*  차가 잠기는 것을 여러 번 지켜보세요. payload는 매번 같고 freshness는 매번 다릅니다.
+*  그때 MAC이 어떻게 되는지 보세요.
 
-Then unlock a car whose owner never asked you to.
+문이 열리면 플래그가 버스로 나옵니다!

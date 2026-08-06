@@ -1,22 +1,24 @@
-Rolling back an odometer is the most commonly committed vehicle crime there is,
-and it is a diagnostic operation. Service `0x2E`, WriteDataByIdentifier, is the
-mirror of the `0x22` you already know:
+# 주행거리 조작과, 기억하는 두 번째 컨트롤러
 
-    2E F1 A2 00 03 46 F0        write 214,768 to data identifier 0xF1A2
+이 단계의 목표는 다음과 같습니다:
+*  주행거리 조작(odometer rollback)은 가장 흔한 차량 범죄입니다. 동시에 하나의 진단 작업입니다.
+*  service `0x2E` **WriteDataByIdentifier**는 이미 아는 `0x22`의 반대편입니다.
+*  DID 공간도 session 규칙도 같습니다. 쓰기는 기본 session에서 해 주지 않습니다.
 
-Same identifier space, same session rules --- writing is not something a
-controller will do in the default session.
+        2E F1 A2 00 03 46 F0        DID 0xF1A2 에 214,768 기록
 
-Read `0xF1A2` from the instrument cluster at `0x7E0` and it will tell you what
-this car has done. Put it back to something under forty thousand kilometres and
-the car is worth several thousand more.
+*  계기판은 `0x7E0`에 있습니다. `0xF1A2`를 읽으면 이 차가 달린 거리가 나옵니다.
+*  다만 이제는 계기판만 기억하지 않습니다.
+*  주행거리는 한 곳만 고쳐도 들키도록 여러 컨트롤러에 기록됩니다.
+*  계기판은 `0xF1A3`으로 plausibility 판정을 내놓습니다.
+*  이때 자기 메모리를 읽는 것이 아니라 **비교**합니다.
 
-Except that clusters stopped being the only witness twenty years ago.
+과제:
+*  주행거리를 기억하는 컨트롤러를 모두 찾으세요.
+*  그 값들이 **4만 킬로미터 미만**의 같은 숫자를 가리키게 만드세요.
 
-Mileage is written into more than one controller precisely so that rewriting
-one of them can be caught. The cluster publishes its own verdict on data
-identifier `0xF1A3`, and it is not reading its own memory to reach it --- it is
-comparing. Change one copy and the verdict says so.
+힌트:
+*  한쪽만 고치면 `0xF1A3` 판정이 값이 서로 다르다고 알려 줍니다.
+*  쓰기 전에 확장 session에 들어가야 합니다.
 
-Find every controller that remembers, and make them agree on a number they were
-never at.
+모든 기록이 일치하고 값이 충분히 낮으면 plausibility response에 플래그가 담겨 옵니다!

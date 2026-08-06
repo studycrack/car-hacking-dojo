@@ -1,24 +1,25 @@
-A controller asked for something it cannot do does not simply answer `7F` and
-forget. It records a **Diagnostic Trouble Code** --- a three-byte fault
-identifier and a status byte --- until a technician clears it. Scan a
-controller's services and you have written a line in its logbook for every
-request it did not like.
+# DTC를 읽고 지워서 흔적 없애기
 
-Two services matter here.
+이 단계의 목표는 다음과 같습니다:
+*  컨트롤러는 할 수 없는 request를 받으면 `7F`만 답하고 잊지 않습니다.
+*  **DTC**(고장 코드)를 남깁니다. 3바이트 ID와 1바이트 상태로 이루어집니다.
+*  정비사가 지울 때까지 남아 있습니다.
+*  컨트롤러의 service를 훑고 다니면, 마음에 들지 않은 request마다 DTC가 한 줄씩 쌓입니다.
+*  이 컨트롤러에는 플래그를 내주는 릴리스 routine이 있습니다.
+*  그런데 DTC가 남아 있는 동안에는 릴리스 routine을 실행하지 않습니다.
+*  routine을 찾는 탐색이 바로 그 routine을 막는 원인이 됩니다.
 
-`19 02 <mask>` --- ReadDTCInformation, reportDTCByStatusMask --- returns the
-stored faults whose status byte overlaps your mask. Use `FF` for everything.
-The response is `59 02`, an availability mask, then four bytes per fault: three
-of identifier, one of status.
+과제:
+*  릴리스 routine의 ID를 찾아내세요.
+*  DTC를 지운 뒤 그 routine을 실행하세요.
 
-`14 FF FF FF` --- ClearDiagnosticInformation --- erases the lot.
+힌트:
+*  routine은 `31 01 <id>`로 ID를 훑으며 찾습니다.
+*  `requestOutOfRange`가 아닌 response가 나오는 지점이 정답입니다.
+*  `19 02 <mask>`는 상태 바이트가 mask와 겹치는 DTC를 돌려줍니다. 전부 보려면 `FF`를 쓰세요.
+*  response는 `59 02`, 가용 mask, 그다음 DTC 하나당 4바이트입니다. ID 3바이트에 상태 1바이트입니다.
+*  `14 FF FF FF`이 전부 지웁니다.
+*  진행하면서 DTC를 계속 읽어 보세요. 지금 자신이 어떻게 보이는지 알 수 있습니다.
+*  순서가 핵심입니다. 지운 다음에는 DTC를 남기지 않는 request만 해야 합니다.
 
-This controller has a release routine that will hand you the flag. Finding it
-means trying routine identifiers with `31 01 <id>` until one stops saying
-`requestOutOfRange` --- and that search is exactly the kind of noisy thing that
-fills a fault memory.
-
-It also will not run a release routine while it has faults recorded. So the
-search that finds the routine is the same search that stops it from running.
-
-Read the fault memory as you go.
+릴리스 routine이 실행되면 response에 플래그가 담겨 옵니다!

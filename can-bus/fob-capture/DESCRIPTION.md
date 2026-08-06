@@ -1,18 +1,20 @@
-A CAN frame is not a message waiting in a queue. Whoever was listening at that
-instant heard it; for everyone else it never happened. A key fob transmits
-**once** per press.
+# 한 번만 지나가는 전송 붙잡기
 
-Press the button:
+이 단계의 목표는 다음과 같습니다:
+*  CAN frame은 쌓여서 기다리지 않습니다. 전선에 잠깐 실렸다 사라집니다.
+*  그때 듣고 있던 쪽만 들었습니다. 나머지에게는 일어나지 않은 일입니다.
+*  이 차의 키 포브는 버튼 한 번에 딱 한 번만 전송합니다.
+*  그 전송 안에 플래그가 ascii로 들어 있습니다.
 
-    /challenge/press-fob
+과제:
+*  먼저 캡처를 걸어 두세요. 다른 터미널을 쓰거나 `&`로 백그라운드에 두면 됩니다.
+*  그다음 버튼을 누르세요.
 
-The burst it triggers carries the flag in plain ascii, so the order of your
-commands is the whole challenge:
+        /challenge/press-fob
 
-- Start your capture, in another terminal or backgrounded with `&`.
-- *Then* press the button.
+힌트:
+*  누르고 나서 캡처를 걸면 빈 캡처만 남습니다. 오류는 나오지 않습니다.
+*  실패해도 불이익은 없습니다. 누르는 횟수에도 제한이 없습니다.
+*  이 순서는 이후 모든 문제에서 전제가 됩니다.
 
-Press first and you get an empty capture. There is no penalty and no limit on
-presses --- set the capture up and press again.
-
-Every remaining challenge assumes you are already listening when you act.
+burst 안에 플래그가 들어 있습니다. 캡처에서 찾아내세요!

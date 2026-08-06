@@ -1,15 +1,23 @@
-This is the module that lets a phone be the key. Read its characteristics and
-you will find values that look like nothing:
+# 인코딩은 암호화가 아니다
 
-    36 31 34 65 33 32 62 61 39 63
+이 단계의 목표는 다음과 같습니다:
+*  이 모듈은 휴대폰을 key로 쓰게 해 주는 장치입니다.
+*  characteristic을 읽어 보면 아무 뜻도 없어 보이는 값이 나옵니다.
 
-That is not encryption. It is ascii digits and letters, which is what you get
-when firmware stores a byte array as **hex text**. Decode it and you have half
-of something.
+        36 31 34 65 33 32 62 61 39 63
 
-The other half is stored differently --- padded, alphanumeric, with the shape
-that gives **base64** away.
+*  이것은 암호화가 아닙니다. ascii 숫자와 알파벳입니다.
+*  펌웨어가 바이트 배열을 **hex 텍스트**로 저장하면 이런 모양이 됩니다.
+*  나머지 절반은 다른 방식으로 저장되어 있습니다.
+*  padding이 붙고 영숫자로만 이루어진, **base64** 특유의 모양입니다.
 
-Neither is a cipher: there is no key and the transformation is published.
-Recognising them on sight is the skill. Decode both halves, put them in the
-order the descriptors give you, and you have the whole thing.
+과제:
+*  두 조각을 각각 알맞은 방식으로 디코딩하세요.
+*  descriptor가 알려 주는 순서대로 이어 붙이세요.
+
+힌트:
+*  어느 쪽도 암호가 아닙니다. key가 없고 변환 방식이 공개되어 있습니다.
+*  보자마자 알아보는 것이 이 문제의 요령입니다.
+*  두 조각의 순서는 descriptor에 적혀 있습니다.
+
+두 조각을 순서대로 합치면 플래그가 됩니다!

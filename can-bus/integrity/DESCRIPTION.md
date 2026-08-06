@@ -1,30 +1,32 @@
-The instrument cluster you lied to believed whatever arrived. Newer modules do
-not. There is no room for a signature in eight bytes, so safety-relevant
-messages carry two small fields instead, borrowed from AUTOSAR End-to-End
-protection:
+# alive counter와 checksum을 복원해 frame 위조하기
 
-- An **alive counter**, incrementing by one on every transmission.
-- A **checksum** over the payload.
+이 단계의 목표는 다음과 같습니다:
+*  앞에서 속인 계기판은 도착한 것을 그대로 믿었습니다. 요즘 모듈은 그렇지 않습니다.
+*  8바이트 안에는 서명을 넣을 자리가 없습니다.
+*  그래서 안전 관련 메시지에는 작은 필드 두 개가 붙습니다. AUTOSAR End-to-End 보호에서 온 것입니다.
+   *  **alive counter** — 전송할 때마다 1씩 증가합니다.
+   *  **checksum** — payload에 대해 계산합니다.
+*  이 차의 조향 보조 모듈은 `0x1F5`로 토크 요청을 받습니다.
+*  두 필드가 맞지 않으면 거부합니다.
+*  계산 방법은 알려드리지 않습니다. 직접 알아내야 합니다.
 
-This car's steering assist accepts torque requests on `0x1F5` and rejects
-anything whose integrity fields do not hold up. You are not told how they are
-computed. Recover that.
+과제:
+*  두 필드가 각각 어떻게 계산되는지 복원하세요.
+*  조향 토크 `0x0BB8`을 지시하세요.
+*  모듈이 그 값을 담은 frame을 **연속 8개** 받아들이도록 유지하세요.
 
-Two things are on your side. The module publishes its verdict on `0x1F6` ---
-byte 0 is `01` when it accepted the last frame, `10` when the checksum was
-wrong, `11` when the counter was wrong, and byte 1 is how many valid frames in
-a row it has seen carrying the value it is watching. So you are told *which*
-check you failed.
+힌트:
+*  모듈은 `0x1F6`으로 판정을 알려 줍니다.
+*  바이트 0은 수락이면 `01`, checksum 오류면 `10`, counter 오류면 `11`입니다.
+*  바이트 1은 지켜보는 값을 담은 frame을 연속 몇 개 받았는지입니다.
+*  즉 어느 검사에서 걸렸는지 알려 줍니다.
+*  주차 보조 모듈이 정상적으로 보호된 요청을 보냅니다. 이것이 sample입니다.
 
-And the park assist issues genuine, correctly protected requests:
+        /challenge/park-assist
 
-    /challenge/park-assist
+*  sample을 캡처하려면 `candump`를 **먼저** 띄워야 합니다.
+*  payload가 바뀔 때 마지막 두 바이트가 어떻게 움직이는지 보세요.
+*  `cansniffer -c vcan0`도 도움이 됩니다.
+*  sample을 그대로 replay하는 것으로는 안 됩니다. 값이 달라지면 보호 필드도 달라져야 합니다.
 
-That burst is your specimen. Capture it --- `candump` running *before* you
-trigger it --- and study how the last two bytes behave as the payload changes.
-`cansniffer -c vcan0` helps here too.
-
-Then command a steering torque of `0x0BB8` and hold it: the module wants
-**eight consecutive accepted frames** carrying that value, so your counters
-have to keep marching in step and every checksum has to be right. Replaying the
-specimen will not do it.
+연속 8개가 받아들여지면 플래그가 버스로 나옵니다!

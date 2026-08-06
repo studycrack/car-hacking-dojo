@@ -1,35 +1,37 @@
-You were told the engine controller lives at `0x7E0`. On a car you have never
-seen, nobody tells you that.
+# 컨트롤러와 DID 열거하기
 
-ISO 15765-4 reserves `0x7E0`-`0x7E7` for diagnostic requests, with responses
-eight identifiers higher at `0x7E8`-`0x7EF`. Manufacturers put their own
-controllers wherever they like, and the interesting ones are exactly the ones
-that are not where the standard says to look.
+이 단계의 목표는 다음과 같습니다:
+*  앞에서는 엔진 컨트롤러가 `0x7E0`에 있다고 알려드렸습니다.
+*  처음 보는 차에서는 아무도 알려주지 않습니다.
+*  ISO 15765-4는 진단 request용으로 `0x7E0`부터 `0x7E7`까지를 예약해 두었습니다.
+*  response는 여덟 개 위인 `0x7E8`부터 `0x7EF`까지입니다.
+*  제조사는 자기 컨트롤러를 원하는 자리에 둡니다.
+*  흥미로운 것일수록 규격이 말하는 자리에 없습니다.
 
-So you enumerate. Two sweeps:
+과제:
+*  `0x700`부터 `0x7FF`까지 각 ID에 `3E 00`을 보내세요. 어떤 주소가 응답하는지 확인합니다.
+*  찾아낸 컨트롤러에 service `0x22`로 DID를 훑으세요.
+*  있어서는 안 될 컨트롤러를 찾고, 그것이 들고 있는 것을 읽으세요.
 
-**Which addresses answer?** Service `0x3E`, TesterPresent, is the "are you
-there" of UDS. Every controller implements it and it changes no state. Send
-`3E 00` to each identifier in `0x700`-`0x7FF`.
+힌트:
+*  service `0x3E` TesterPresent는 컨트롤러가 살아 있는지만 확인하는 request입니다.
+*  모든 컨트롤러가 구현하고 있고 상태를 바꾸지 않습니다. 주소 스캔에 적합합니다.
+*  `0xF1xx` 대역은 부품번호, 소프트웨어 버전, 일련번호가 들어가는 자리입니다.
+*  제조사가 남기지 말아야 할 것을 습관적으로 남기는 곳입니다.
+*  기록이 있으면 `62`에 DID를 붙여 답합니다.
+*  없으면 `7F 22 31`(requestOutOfRange)로 답합니다.
+*  `isotpreq`가 분할과 Flow Control을 대신 처리합니다.
 
-**What does an address expose?** Sweep data identifiers with service `0x22`.
-Records in the `0xF1xx` block are the identification records --- part numbers,
-software versions, serial numbers --- and are where manufacturers habitually
-leave things they should not. A controller answers `62` plus the identifier
-when a record exists, and `7F 22 31` (requestOutOfRange) when it does not.
+        isotpreq vcan0 7E0 7E8 22F190
 
-`isotpreq` handles segmentation and flow control for you:
+*  request 수백 개를 매번 프로세스로 보내면 느립니다. 스크립트로 도세요.
+*  `vcan.py`와 `isotp.py`를 `/challenge`에서 가져다 쓸 수 있습니다.
 
-    isotpreq vcan0 7E0 7E8 22F190
+        import sys
+        sys.path.insert(0, "/challenge")
+        import isotp, vcan
 
-Sweeping several hundred requests through a process each is slow. Script it ---
-both `vcan.py` and `isotp.py` are importable from `/challenge`:
+        bus = vcan.Bus("vcan0")
+        response = isotp.request(bus, 0x7E0, 0x7E8, bytes.fromhex("3E00"), timeout=0.2)
 
-    import sys
-    sys.path.insert(0, "/challenge")
-    import isotp, vcan
-
-    bus = vcan.Bus("vcan0")
-    response = isotp.request(bus, 0x7E0, 0x7E8, bytes.fromhex("3E00"), timeout=0.2)
-
-Find the controller that should not be there, and read what it is holding.
+숨어 있던 컨트롤러의 기록 안에 플래그가 있습니다!

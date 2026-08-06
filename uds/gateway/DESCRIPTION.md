@@ -1,25 +1,28 @@
-A modern vehicle has several buses kept apart on purpose, with a **central
-gateway** between them moving only the messages that need to cross. The OBD-II
-connector is on the diagnostic side of that gateway, not on the powertrain bus.
+# gateway routing table을 읽고 다른 버스에 닿기
 
-Your workspace has two interfaces this time:
+이 단계의 목표는 다음과 같습니다:
+*  실제 차량에는 버스가 여러 개 있습니다. 일부러 서로 떨어뜨려 놓습니다.
+*  그 사이에 **중앙 gateway**가 있어서 건너가야 할 메시지만 옮깁니다.
+*  OBD-II 커넥터는 gateway의 진단 쪽에 있습니다. 파워트레인 버스에 있지 않습니다.
+*  이번 워크스페이스에는 인터페이스가 두 개입니다.
 
-    ls -l /run/vcan/
+        ls -l /run/vcan/
 
-`vcan0` is what the connector reaches. Try to listen to `vcan1` and you will be
-told you are not on that bus, because that pair of wires runs to the engine bay
-and nowhere near you.
+*  커넥터가 닿는 것은 `vcan0`입니다.
+*  `vcan1`을 들으려 하면 그 버스에 있지 않다는 답을 받습니다.
+*  그 전선은 엔진룸으로 갑니다. 여러분 쪽으로 오지 않습니다.
+*  그러니 버스를 공격하지 말고 **버스를 이어 주는 것**을 공격합니다.
 
-So you do not attack the bus. You attack the thing that bridges it.
+과제:
+*  진단 버스에서 gateway를 찾으세요.
+*  gateway의 식별 기록 중 파워트레인 버스로 넘겨주는 ID 목록을 읽으세요.
+*  그 경로로 이모빌라이저에 닿아 routine `0xC001`을 실행하세요.
 
-A gateway is told which identifiers to carry across, and that routing table is
-configuration: written once, copied between model years, rarely audited.
+힌트:
+*  gateway도 다른 컨트롤러처럼 응답합니다. 열거 방법은 앞에서 익힌 그대로입니다.
+*  routing table은 개발 중에 한 번 작성되어 연식마다 복사됩니다. 거의 감사되지 않습니다.
+*  목록을 꼼꼼히 보세요. 세 개는 예상할 만한 평범한 진단 주소입니다.
+*  하나는 여러분이 훑어볼 생각조차 하지 않았을 범위에 있습니다.
+*  이모빌라이저는 자기에게 닿을 수 있는 상대라면 `0xC001`을 그대로 실행합니다.
 
-Find the gateway on the diagnostic bus. It answers like any other controller,
-and among its identification records is the list of identifiers it forwards
-onto the powertrain bus. Read it carefully --- three entries are the ordinary
-diagnostic addresses you would expect, and one is nowhere near the range you
-would have thought to scan.
-
-Behind it is the immobilizer, which will run routine `0xC001` for anyone who
-can reach it.
+routine이 실행되면 response에 플래그가 담겨 옵니다!

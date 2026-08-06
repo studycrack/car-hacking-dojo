@@ -1,19 +1,26 @@
-Your workspace has a CAN interface, `vcan0`, attached to a running car. Every
-controller sees every frame. A frame carries an 11-bit *identifier* saying what
-it means, and up to 8 bytes of data.
+# CAN 버스 훔쳐듣기
 
-Listen:
+이 단계의 목표는 다음과 같습니다:
+*  워크스페이스에 가상 CAN 인터페이스 `vcan0`이 있습니다. 달리는 자동차가 연결되어 있습니다.
+*  CAN은 broadcast 버스입니다. 모든 컨트롤러가 모든 frame을 봅니다.
+*  frame 하나는 11비트 ID와 최대 8바이트 데이터로 이루어집니다.
+*  ID는 그 frame이 무슨 뜻인지를 가리킵니다.
+*  이 차의 컨트롤러 하나가 버스에 텍스트를 흘리고 있습니다.
 
-    candump vcan0
+과제:
+*  버스에 흐르는 frame을 확인하세요.
 
-Each line is the interface, the identifier in hex, the payload length, then the
-bytes:
+        candump vcan0
 
-     vcan0  0C0   [8]  0B 54 00 00 27 10 00 00
+*  텍스트를 흘리는 컨트롤러를 찾아내세요.
 
-One controller is broadcasting text. `-a` renders each payload as ascii
-alongside the hex:
+힌트:
+*  각 줄은 인터페이스, ID, payload 길이, payload 순서로 표시됩니다.
 
-    candump -a vcan0
+        vcan0  0C0   [8]  0B 54 00 00 27 10 00 00
 
-Read the flag off the wire.
+*  `-a`를 붙이면 payload를 ascii로도 보여줍니다.
+
+        candump -a vcan0
+
+플래그는 버스 위로 그대로 지나갑니다. 화면에서 읽어내세요!

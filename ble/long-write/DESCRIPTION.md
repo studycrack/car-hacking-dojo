@@ -1,20 +1,30 @@
-Reading has this problem and you have never had to notice. A Read Response
-carries at most MTU-1 bytes, so every longer value has been arriving in pieces,
-gathered up with Read Blob requests your client sent without mentioning it.
+# 한 번에 안 들어가는 값 쓰기 (Prepare / Execute)
 
-Writing has the same problem and a different answer. There is no `Write Blob`
---- the client queues the pieces and then commits them:
+이 단계의 목표는 다음과 같습니다:
+*  읽기에도 같은 문제가 있었지만 눈치챌 필요가 없었습니다.
+*  Read Response는 최대 MTU-1 바이트를 싣습니다.
+*  그보다 긴 값은 여러 조각으로 왔고, 클라이언트가 Read Blob request를 대신 보내 모았습니다.
+*  쓰기도 같은 문제를 갖지만 해결 방식이 다릅니다.
+*  `Write Blob` 같은 것은 없습니다. 클라이언트가 조각을 쌓아 두었다가 한 번에 반영합니다.
 
-| Request | Meaning |
+| request | 뜻 |
 | --- | --- |
-| `16` Prepare Write | here is a fragment, and the offset it belongs at |
-| `18` Execute Write | apply everything I queued (`01`), or throw it away (`00`) |
+| `16` Prepare Write | 조각 하나와 그 조각이 들어갈 offset |
+| `18` Execute Write | 쌓아 둔 것을 반영(`01`) 또는 폐기(`00`) |
 
-Nothing is written until the Execute. The peripheral holds the fragments,
-reassembles them in offset order, and applies the result as one value.
+*  Execute 전까지는 아무것도 기록되지 않습니다.
+*  peripheral이 조각을 들고 있다가 offset 순서로 재조립해 하나의 값으로 반영합니다.
+*  이 바디 컨트롤 모듈에는 서비스 모드가 있습니다.
+*  **36바이트짜리 명령**에 열립니다. 평범한 Write Request로는 실어 나를 수 없습니다.
 
-This body control module has a service mode, and it opens for a command that is
-thirty-six bytes long. A plain Write Request will not carry it.
+과제:
+*  attribute table에서 그 명령을 찾으세요.
+*  Prepare Write로 조각을 쌓고 Execute Write로 반영해 서비스 모드를 여세요.
 
-The command is not a secret; it is in the attribute table where the workshop
-tool's installer left it. Getting it *in* is the exercise.
+힌트:
+*  명령 자체는 비밀이 아닙니다.
+*  정비 도구를 설치한 사람이 attribute table에 그대로 남겨 두었습니다.
+*  그것을 **집어넣는 것**이 이 문제입니다.
+*  평범한 쓰기로 보내면 길이가 잘못됐다는 오류가 돌아옵니다.
+
+서비스 모드가 열리면 해당 characteristic을 읽어 플래그를 확인하세요!

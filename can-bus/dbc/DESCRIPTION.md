@@ -1,27 +1,34 @@
-A **DBC file** is how bus definitions are written down: one entry per message,
-one line per signal, with start bit, width, byte order, scale factor and
-offset. There is one in `/challenge/vehicle.dbc`.
+# DBC 파일을 읽고 signal 만들어 보내기
 
-Its comfort message is awkward by hand --- cabin temperature scaled by `0.5`
-and offset by `-20`, a four-bit fan, and Motorola byte order, whose start bits
-are counted in a way that catches out everyone who tries it freehand.
+이 단계의 목표는 다음과 같습니다:
+*  **DBC 파일**은 버스 정의를 적어 두는 형식입니다.
+*  메시지마다 한 항목, signal마다 한 줄이 있습니다.
+*  각 signal에는 start bit, 길이, byte order, scale, offset이 적혀 있습니다.
+*  이 차의 DBC가 `/challenge/vehicle.dbc`에 있습니다.
+*  그 안의 comfort 메시지는 손으로 계산하기 까다롭습니다.
+*  실내 온도는 scale `0.5`에 offset `-20`입니다. 팬은 4비트입니다.
+*  byte order는 Motorola입니다. start bit를 세는 방식이 직관과 다릅니다.
 
-`cantools` reads DBC files and does the packing:
+과제:
+*  `/challenge/vehicle.dbc`를 읽고 comfort 메시지 구조를 파악하세요.
+*  실내 목표 온도 **30.5도**, 송풍 팬 **11**을 지시하는 frame을 보내세요.
 
-    cantools dump /challenge/vehicle.dbc
+힌트:
+*  `cantools`가 DBC를 읽고 bit packing까지 해 줍니다.
 
-It is importable, with one wrinkle. `python3` here is the dojo's interpreter;
-`cantools` is installed in the challenge image. Only one of them has it:
+        cantools dump /challenge/vehicle.dbc
 
-    /usr/bin/python3 -c 'import cantools; print(cantools.__version__)'
+*  이 워크스페이스에는 파이썬이 두 개입니다.
+*  `python3`는 도장 것입니다. `cantools`는 문제 이미지 쪽에 설치되어 있습니다.
 
-So write your script for that one:
+        /usr/bin/python3 -c 'import cantools; print(cantools.__version__)'
 
-    #!/usr/bin/python3
-    import cantools
-    db = cantools.database.load_file("/challenge/vehicle.dbc")
-    message = db.get_message_by_name("BCM_Command")
-    data = message.encode({...})
+*  스크립트도 그쪽 인터프리터로 작성하세요.
 
-Command a cabin target of **30.5 degrees** with the vent fan at **11**, and put
-that frame on the bus.
+        #!/usr/bin/python3
+        import cantools
+        db = cantools.database.load_file("/challenge/vehicle.dbc")
+        message = db.get_message_by_name("BCM_Command")
+        data = message.encode({...})
+
+지시가 받아들여지면 플래그가 버스로 나옵니다!

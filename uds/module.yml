@@ -5,43 +5,42 @@ resources:
     name: The Protocol Behind the OBD-II Port
     expandable: false
     content: |
-      Raw CAN frames are how a car talks to itself. **UDS** --- Unified
-      Diagnostic Services, ISO 14229 --- is how a car talks to a technician,
-      and it is a far more powerful interface: read fault memory, run actuator
-      tests, read and write memory, reflash a controller.
+      원시 CAN frame이 차가 자기 자신과 나누는 대화라면, **UDS**(Unified
+      Diagnostic Services, ISO 14229)는 차가 정비사와 나누는 대화입니다. 그리고
+      훨씬 강력합니다. 고장 기록을 읽고, 액추에이터를 시험하고, 메모리를 읽고
+      쓰고, 컨트롤러를 다시 flash할 수 있습니다.
 
-      Because a diagnostic exchange rarely fits in 8 bytes, UDS runs on top of
-      **ISO-TP** (ISO 15765-2), a transport layer that segments a payload
-      across many frames and has the receiver pace the sender with flow control
-      frames.
+      진단 교신은 8바이트에 좀처럼 들어가지 않기 때문에, UDS는 **ISO-TP**(ISO
+      15765-2) 위에서 돌아갑니다. payload를 여러 frame으로 나누고, 수신자가
+      Flow Control frame으로 송신자의 속도를 조절하는 전송 계층입니다.
 
-      Everything a dealer tool can do is reachable by anyone who can put frames
-      on the bus. The only thing standing in the way is UDS's own access
-      control, which is where this module ends up.
+      정비 장비가 할 수 있는 일은 버스에 frame을 올릴 수 있는 사람이면 누구나
+      할 수 있습니다. 가로막는 것은 UDS 자신의 접근 제어뿐이고, 이 모듈은 결국
+      거기로 갑니다.
 
   - type: header
-    content: Getting a diagnostic session to talk to you
+    content: 진단 session과 대화 시작하기
 
   - id: iso-tp
     type: challenge
     name: Segmented Transport
 
   - type: header
-    content: "Finding what is there: enumeration, and what enumeration records"
+    content: "무엇이 있는지 찾기: 열거, 그리고 열거가 남기는 기록"
 
   - id: ecu-discovery
     type: challenge
     name: Enumerating Controllers
 
   - type: header
-    content: Getting past what says no
+    content: 거절하는 것을 통과하기
 
   - id: security-access
     type: challenge
     name: Defeating SecurityAccess
 
   - type: header
-    content: Reading and writing a controller's memory
+    content: 컨트롤러 메모리 읽고 쓰기
 
   - id: firmware-dump
     type: challenge
@@ -60,7 +59,7 @@ resources:
     name: Rewriting What the Car Remembers
 
   - type: header
-    content: Reaching what the connector cannot
+    content: 커넥터가 닿지 못하는 곳에 닿기
 
   - id: gateway
     type: challenge

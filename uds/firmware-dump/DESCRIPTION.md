@@ -1,35 +1,34 @@
-Firmware is where every assumption a manufacturer made is written down: the
-services they built and never documented, the constants they compiled in, the
-strings they left in a debug build that shipped.
+# 펌웨어를 dump하고 문서에 없는 service 찾기
 
-UDS service `0x23`, **ReadMemoryByAddress**, is the front door. The address and
-length widths are not fixed --- the byte after the service id declares them:
+이 단계의 목표는 다음과 같습니다:
+*  펌웨어에는 제조사가 세운 가정이 전부 적혀 있습니다.
+*  문서화하지 않은 service, 컴파일해 넣은 상수, 디버그 빌드에 남은 문자열 같은 것들입니다.
+*  UDS service `0x23` **ReadMemoryByAddress**가 그 입구입니다.
+*  주소와 길이의 폭은 고정이 아닙니다. service id 다음 바이트가 그것을 알려 줍니다.
 
-    23 <AALFI> <address...> <length...>
+        23 <AALFI> <주소...> <길이...>
 
-`AALFI` packs two nibbles: the high one is how many bytes carry the *length*,
-the low one how many carry the *address*. So `14` means a four-byte address
-followed by a one-byte length, and
+*  `AALFI`는 니블 두 개입니다. 상위는 **길이**의 바이트 수, 하위는 **주소**의 바이트 수입니다.
+*  즉 `14`는 4바이트 주소에 1바이트 길이입니다.
 
-    23 14 20 00 00 00 10
+        23 14 20 00 00 00 10
 
-asks for `0x10` bytes from `0x20000000`. A positive response is `63` followed
-by the data.
+*  위 request는 `0x20000000`에서 `0x10`바이트를 달라는 뜻입니다.
+*  positive response는 `63` 뒤에 데이터가 붙습니다.
 
-Three things stand between you and a dump.
+과제:
+*  flash가 어디에 있는지 알아내세요.
+*  한 번에 읽을 수 있는 최대 크기를 찾으세요.
+*  반복문으로 전체를 dump하세요.
+*  이미지에서 규격에 없는 service와 그 service가 요구하는 값을 찾아 호출하세요.
 
-**Where is the memory?** Anything outside the mapped region gets
-`requestOutOfRange`. Guessing across a 32-bit space is hopeless, so do what you
-did when you enumerated the controllers and ask this one what it is:
-identification record `0xF18C` names the part, and the part names its own
-memory map. Cortex-M flash does not move around.
+힌트:
+*  매핑된 영역 밖을 요청하면 `requestOutOfRange`가 옵니다.
+*  32비트 공간을 찍어 맞히는 것은 무리입니다. 컨트롤러에게 직접 물어보세요.
+*  식별 기록 `0xF18C`가 부품명을 알려 줍니다. 부품명이 자기 메모리 layout을 알려 줍니다.
+*  Cortex-M flash 위치는 정해져 있습니다.
+*  한 response에 실을 수 있는 것보다 많이 요청하면 거부당합니다. 한계를 찾은 뒤 반복하세요.
+*  `0x23`은 아무에게나 해 주는 service가 아닙니다. session을 확인하세요.
+*  이미지를 얻은 뒤에는 `strings`나 `xxd`로 훑으세요. 파이썬으로 직접 읽어도 됩니다.
 
-**How much at a time?** More than the controller will put on the wire in one
-response gets refused. Find the ceiling and write a loop.
-
-**What session?** `0x23` is not something a controller will do for anyone who
-asks.
-
-Once you have the image, run `strings` over it, or `xxd`, or walk it in python.
-Somewhere in there is a service that appears in no specification, along with
-what it expects to be handed. Call it.
+숨은 service를 올바르게 호출하면 response에 플래그가 담겨 옵니다!

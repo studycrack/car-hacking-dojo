@@ -5,13 +5,13 @@ resources:
     name: All of It at Once
     expandable: false
     content: |
-      Three modules, three interfaces, and in a real vehicle they are not three
-      problems. They are one path: something reachable from outside, bridged to
-      something that was never meant to be reachable at all.
+      세 모듈, 세 개의 인터페이스. 그러나 실제 차량에서 이것들은 세 개의 문제가
+      아니라 하나의 경로입니다. 바깥에서 닿을 수 있는 무언가가, 애초에 닿아서는
+      안 되는 무언가와 이어져 있는 것입니다.
 
-      This is the shape of every serious automotive compromise that has been
-      published. Nobody attacked a powertrain bus directly. They attacked the
-      thing that was talking to it and to the outside world at the same time.
+      공개된 심각한 차량 침해 사례는 모두 이 모양이었습니다. 아무도 파워트레인
+      버스를 직접 공격하지 않았습니다. 바깥세상과 그 버스에 동시에 말을 걸고
+      있던 것을 공격했습니다.
 
   - id: pivot
     type: challenge

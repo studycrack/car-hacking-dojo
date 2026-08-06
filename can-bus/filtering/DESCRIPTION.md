@@ -1,18 +1,23 @@
-A real bus carries thousands of frames a second across dozens of identifiers.
-`candump` takes a filter, appended to the interface as `ID:MASK`. A frame is
-shown when `received_id & MASK == ID & MASK`.
+# CAN ID filter로 원하는 frame만 골라내기
 
-To see only `0x1C4`, match all eleven bits:
+이 단계의 목표는 다음과 같습니다:
+*  실제 버스에는 초당 수천 개의 frame이 흐릅니다. 눈으로 훑는 것은 분석이 아닙니다.
+*  이 차에서는 컨트롤러 하나가 특정 ID로만 플래그를 흘립니다.
+*  조각들은 순서가 뒤섞여 도착합니다.
 
-    candump vcan0,1C4:7FF
+과제:
+*  플래그가 새어 나오는 ID를 찾으세요.
+*  그 ID만 남도록 filter를 걸어 조각을 모으세요.
+*  조각을 올바른 순서로 되돌리세요.
 
-A looser mask matches a range: `candump vcan0,100:700` shows `0x100` to
-`0x1FF`.
+힌트:
+*  `candump`는 인터페이스 뒤에 `ID:MASK` 형식으로 filter를 받습니다.
+*  `received_id & MASK == ID & MASK`인 frame만 보여줍니다.
 
-One controller here is leaking the flag on a single identifier. Find which ---
-sorting a capture by identifier is one way, `candump vcan0 | awk` another ---
-then filter it down.
+        candump vcan0,1C4:7FF
 
-The chunks arrive out of order. Each payload is seven bytes of text prefixed
-with one byte giving the position that chunk belongs at. Put them back in
-order.
+*  mask를 느슨하게 주면 범위로 걸립니다. `candump vcan0,100:700`은 `0x100`부터 `0x1FF`까지입니다.
+*  수상한 ID를 찾을 때는 캡처를 ID로 정렬해 보세요. `candump vcan0 | awk`도 좋습니다.
+*  각 payload는 텍스트 7바이트와 위치를 알려 주는 1바이트로 이루어집니다.
+
+조각을 순서대로 이어 붙이면 플래그가 됩니다!
