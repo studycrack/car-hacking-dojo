@@ -12,6 +12,7 @@ Frames are carried over the socket in can-utils notation, one per line:
 """
 
 import os
+import select
 import selectors
 import socket
 import sys
@@ -78,15 +79,16 @@ class Bus:
     def frames(self):
         while True:
             while b"\n" not in self.buffer:
-                try:
-                    if self.poll_interval is not None:
-                        self.sock.settimeout(self.poll_interval)
-                    chunk = self.sock.recv(4096)
-                except (socket.timeout, TimeoutError):
-                    yield None
-                    continue
-                finally:
-                    self.sock.settimeout(None)
+                # select rather than settimeout: this socket is shared with the
+                # threads that transmit on it, so a timeout set here would be
+                # inherited by their sendall. It also leaves nothing to restore
+                # if this generator is abandoned while parked on the yield.
+                if self.poll_interval is not None:
+                    readable, _, _ = select.select([self.sock], [], [], self.poll_interval)
+                    if not readable:
+                        yield None
+                        continue
+                chunk = self.sock.recv(4096)
                 if not chunk:
                     return
                 self.buffer += chunk
@@ -157,6 +159,11 @@ class Hub:
                     # worst, never the bus everyone else is sharing
                     if key.data is not None:
                         self.drop(key.fileobj)
+                    else:
+                        # nothing to drop when it is the listening socket that
+                        # failed, and it stays readable, so without this the
+                        # loop spins on it at full speed
+                        time.sleep(0.01)
 
     def accept(self):
         client, _ = self.server.accept()

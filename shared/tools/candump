@@ -9,15 +9,17 @@ import vcan
 
 
 def parse_filter(text):
-    inverted = text.startswith("~")
-    can_id, _, mask = (text[1:] if inverted else text).partition(":")
+    # can-utils spells an inverted filter ID~MASK, with the tilde standing in
+    # for the colon rather than prefixing the identifier
+    inverted = "~" in text
+    can_id, _, mask = text.partition("~" if inverted else ":")
     return int(can_id, 16), int(mask, 16) if mask else 0x7FF, inverted
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="dump CAN traffic",
-        usage="candump [-a] [-t] [-n COUNT] INTERFACE[,ID:MASK][,~ID:MASK]...",
+        usage="candump [-a] [-t] [-n COUNT] INTERFACE[,ID:MASK][,ID~MASK]...",
     )
     parser.add_argument("-a", "--ascii", action="store_true", help="show the payload as ascii")
     parser.add_argument("-t", "--timestamp", action="store_true", help="show a timestamp for each frame")

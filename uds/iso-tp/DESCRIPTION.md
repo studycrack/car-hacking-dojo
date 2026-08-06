@@ -35,5 +35,6 @@ Control frame yourself, and collect the rest.
 
 Once you can do that, ask the same ECU for data identifier `0xF1AB`, which is
 where this manufacturer parks its bootloader unlock token. The ECU is patient
---- it will wait a full two minutes for your Flow Control frame, so you have
-time to type.
+--- it will wait half a minute for your Flow Control frame, so you have time to
+type. While it is waiting it is busy with you and will not answer anything
+else, so if it has gone quiet, give it a moment and ask again.

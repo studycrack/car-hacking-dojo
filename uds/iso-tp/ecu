@@ -48,6 +48,9 @@ for can_id, data in frames:
     if response is None:
         continue
     try:
-        isotp.send(bus, RESPONSE_ID, REQUEST_ID, response, timeout=120, frames=frames)
+        # generous, because the flow control frame is typed by hand here, but
+        # not so generous that a student who has not sent one yet faces a
+        # controller that ignores them for minutes and looks broken
+        isotp.send(bus, RESPONSE_ID, REQUEST_ID, response, timeout=30, frames=frames)
     except TimeoutError:
         continue

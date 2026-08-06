@@ -103,6 +103,11 @@ PROP_INDICATE = 0x20
 
 DEFAULT_MTU = 23
 
+# a peripheral answers on a blocking socket, so a client that sends requests
+# and never reads its responses would otherwise fill the buffer and park the
+# whole peripheral in sendall, serving nobody
+SEND_TIMEOUT = 2.0
+
 
 def device_path(address):
     return os.path.join(SOCKET_DIR, address)
@@ -491,6 +496,18 @@ class Server:
             index += 1
             time.sleep(self.rotation_period)
 
+    def _forget(self, connection):
+        """Drop everything held for a connection that has gone away.
+
+        These are keyed by socket, so without this a subscribe-and-reconnect
+        loop grows them without bound -- and the capstone's relay walks the
+        subscriptions for every frame it forwards.
+        """
+        self.prepared.pop(connection, None)
+        self.pending_indications.pop(connection, None)
+        for key in [key for key in self.subscriptions if key[0] is connection]:
+            del self.subscriptions[key]
+
     def run(self):
         os.makedirs(SOCKET_DIR, exist_ok=True)
         path = device_path(self.address)
@@ -520,11 +537,13 @@ class Server:
                 except OSError:
                     chunk = b""
                 if not chunk:
+                    self._forget(connection)
                     selector.unregister(connection)
                     buffers.pop(connection, None)
                     connection.close()
                     continue
                 buffers[connection] += chunk
+                stalled = False
                 while len(buffers[connection]) >= 2:
                     (length,) = struct.unpack("<H", buffers[connection][:2])
                     if len(buffers[connection]) < 2 + length:
@@ -534,9 +553,18 @@ class Server:
                     response = self.handle_pdu(pdu, connection)
                     if response:
                         try:
+                            connection.settimeout(SEND_TIMEOUT)
                             connection.sendall(struct.pack("<H", len(response)) + response)
                         except OSError:
+                            stalled = True
                             break
+                        finally:
+                            connection.settimeout(None)
+                if stalled:
+                    self._forget(connection)
+                    selector.unregister(connection)
+                    buffers.pop(connection, None)
+                    connection.close()
 
 
 class Client:
