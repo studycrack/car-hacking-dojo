@@ -27,7 +27,6 @@ RUN apt-get update \
         python3 \
         python3-pip \
         xxd \
-        bettercap \
         dbus \
  && rm -rf /var/lib/apt/lists/*
 
