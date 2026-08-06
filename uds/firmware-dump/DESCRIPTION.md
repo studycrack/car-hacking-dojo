@@ -1,35 +1,35 @@
-# 펌웨어를 dump하고 문서에 없는 service 찾기 (ReadMemoryByAddress)
+# Dumping the Firmware to Find an Undocumented Service (ReadMemoryByAddress)
 
-이 단계의 목표는 다음과 같습니다:
-*  펌웨어에는 제조사가 세운 가정이 전부 적혀 있습니다. 문서화하지 않은 service, 컴파일해 넣은 상수, 디버그 빌드에 남은 문자열 같은 것들입니다.
-*  UDS service `0x23` **ReadMemoryByAddress**가 그 입구입니다. 주소와 길이의 폭은 고정이 아니고, service id 다음 바이트가 그것을 알려 줍니다.
-
-```
-23 <AALFI> <주소...> <길이...>
-```
-
-*  `AALFI`는 니블 두 개입니다. 상위는 **길이**의 바이트 수, 하위는 **주소**의 바이트 수입니다. 즉 `14`는 4바이트 주소에 1바이트 길이입니다.
+The goal of this stage is as follows:
+*  Firmware carries every assumption the manufacturer made: services they never documented, constants they compiled in, strings a debug build left behind.
+*  UDS service `0x23`, **ReadMemoryByAddress**, is the way in. Address and length widths are not fixed; the byte after the service id declares them.
 
 ```
-23 14 20 00 00 00 10      0x20000000에서 0x10바이트
+23 <AALFI> <address...> <length...>
 ```
 
-*  positive response는 `63` 뒤에 데이터가 붙습니다.
-*  플래시를 통째로 덤프한 뒤, 이미지 안에서 규격에 없는 service를 찾아 호출해야 합니다.
+*  `AALFI` is two nibbles: the high one is how many bytes of **length**, the low one how many bytes of **address**. So `14` is a four-byte address and a one-byte length.
 
-과제:
-*  플래시가 어디에 있는지 알아내세요.
-   *  식별 기록 `0xF18C`로 부품명을 물어보세요.
-   *  부품명이 자기 메모리 layout을 알려 줍니다.
-*  한 번에 읽을 수 있는 최대 크기를 찾으세요. 그보다 많이 요청하면 거부당합니다.
-*  반복문으로 전체를 덤프하세요.
-*  이미지에서 규격에 없는 service와 그 service가 요구하는 값을 찾아 호출하세요.
+```
+23 14 20 00 00 00 10      0x10 bytes from 0x20000000
+```
 
-힌트:
-*  주소를 찍어 맞히지 마세요. 32비트 공간은 너무 넓습니다. 컨트롤러에게 직접 물어보세요.
-*  경계를 찾을 때는 `requestOutOfRange`를 이용하세요. 매핑된 영역 밖을 요청하면 그것이 옵니다.
-*  거부당하면 session부터 확인하세요. `0x23`은 아무에게나 해 주는 service가 아닙니다.
-*  Cortex-M 플래시 위치는 정해져 있습니다. 부품명을 그 힌트로 쓰세요.
-*  덤프를 얻은 뒤에는 `strings`나 `xxd`로 훑으세요. 파이썬으로 직접 읽어도 됩니다.
+*  A positive response is `63` followed by the data.
+*  You need to dump the flash, then find and call a service that is in no specification.
 
-숨은 service를 올바르게 호출하면 응답에 플래그가 담겨 옵니다!
+Task:
+*  Work out where the flash lives.
+   *  Ask for identification record `0xF18C` to get the part name.
+   *  The part name tells you its memory layout.
+*  Find the largest read the controller will serve. Ask for more and it refuses.
+*  Loop until you have the whole image.
+*  Search the image for the service that is in no specification, and for the value it demands, then call it.
+
+Hints:
+*  Do not guess addresses. A 32-bit space is far too large. Ask the controller instead.
+*  Use `requestOutOfRange` to find the edges. Anything outside a mapped region returns it.
+*  If you are refused, check your session first. `0x23` is not served to just anyone.
+*  Cortex-M puts flash at a known place. Use the part name as the hint for which.
+*  Once you have the dump, run `strings` or `xxd` over it, or read it in python.
+
+Call the hidden service correctly and its response carries the flag!

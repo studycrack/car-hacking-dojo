@@ -1,43 +1,43 @@
-# Prepare / Execute Write로 긴 값 쓰기 (Long Write)
+# Writing a Value That Does Not Fit in One Packet (Long Write)
 
-이 단계의 목표는 다음과 같습니다:
-*  읽기에도 같은 문제가 있었지만 눈치챌 필요가 없었습니다. Read Response는 최대 MTU-1 바이트를 싣고, 그보다 긴 값은 클라이언트가 Read Blob request를 대신 보내 모았습니다.
-*  쓰기도 같은 문제를 갖지만 해결 방식이 다릅니다. `Write Blob` 같은 것은 없고, 클라이언트가 조각을 쌓아 두었다가 한 번에 반영합니다.
+The goal of this stage is as follows:
+*  Reading had the same problem and you never had to notice. A Read Response carries at most MTU-1 bytes, and anything longer came in pieces your client fetched with Read Blob requests on your behalf.
+*  Writing has the same problem and solves it differently. There is no `Write Blob`; the client stages the pieces and they land all at once.
 
-| request | 뜻 |
+| Request | Meaning |
 | --- | --- |
-| `16` Prepare Write | 조각 하나와 그 조각이 들어갈 offset |
-| `18` Execute Write | 쌓아 둔 것을 반영(`01`) 또는 폐기(`00`) |
+| `16` Prepare Write | one piece, and the offset it belongs at |
+| `18` Execute Write | commit what is staged (`01`) or discard it (`00`) |
 
-*  Execute 전까지는 아무것도 기록되지 않습니다. peripheral이 조각을 들고 있다가 offset 순서로 재조립해 하나의 값으로 반영합니다.
-*  이 바디 컨트롤 모듈에는 서비스 모드가 있고, **36바이트짜리 명령**에 열립니다.
-*  평범한 Write Request로는 실어 나를 수 없으니, Prepare / Execute Write로 넣어야 합니다.
+*  Nothing is written until the Execute. The peripheral holds the pieces, reassembles them by offset, and commits one value.
+*  This body control module has a service mode, and it opens on a **36-byte command**, which an ordinary Write Request cannot carry.
+*  You need to get that command in with Prepare and Execute Write.
 
-과제:
-*  attribute table에서 그 36바이트 명령을 찾으세요. 정비 도구를 설치한 사람이 그대로 남겨 두었습니다.
+Task:
+*  Find the 36-byte command in the attribute table. Whoever installed the service tooling left it there.
 
 ```
-gatttool -b <주소> --char-desc
+gatttool -b <address> --char-desc
 ```
 
-*  평범한 쓰기로 한번 보내 보세요. 길이가 잘못됐다는 오류가 돌아옵니다.
-*  Prepare Write로 조각을 쌓고 Execute Write로 반영하세요.
+*  Try sending it with an ordinary write once. You get an error about the length.
+*  Stage it with Prepare Write and commit it with Execute Write.
 
 ```
 import sys
 sys.path.insert(0, "/challenge")
 import ble
 
-client = ble.Client("<주소>")
+client = ble.Client("<address>")
 client.write_long(<handle>, b"...36 bytes...")
 ```
 
-*  서비스 모드가 열리면 해당 characteristic을 읽으세요.
+*  Once service mode is open, read that characteristic.
 
-힌트:
-*  명령을 찾는 데 시간을 쓰지 마세요. 비밀이 아니고, 그것을 **집어넣는 것**이 이 문제입니다.
-*  조각마다 offset을 정확히 매기세요. 어긋나면 재조립된 값이 달라져 서비스 모드가 열리지 않습니다.
-*  한 번에 실을 수 있는 크기를 MTU에서 헤더를 뺀 만큼으로 잡으세요.
-*  `client.write_long`을 쓰세요. 분할과 Execute까지 대신 해 줍니다.
+Hints:
+*  Do not spend time hunting for the command. It is not a secret; getting it **in** is the challenge.
+*  Get every offset right. A wrong one reassembles into a different value and service mode does not open.
+*  Size each piece at the MTU minus the header.
+*  Use `client.write_long`, which does the splitting and the Execute for you.
 
-서비스 모드가 열리면 해당 characteristic을 읽어 플래그를 확인하세요!
+Open service mode, then read that characteristic for the flag!

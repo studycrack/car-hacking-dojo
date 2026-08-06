@@ -1,35 +1,35 @@
-# 한 번만 지나가는 전송 붙잡기 (One-Shot Capture)
+# Catching a Transmission That Happens Once (One-Shot Capture)
 
-이 단계의 목표는 다음과 같습니다:
-*  CAN frame은 쌓여서 기다리지 않고 전선에 잠깐 실렸다 사라집니다.
-*  그때 듣고 있던 쪽만 들었고, 나머지에게는 일어나지 않은 일입니다.
-*  이 차의 키 포브는 버튼 한 번에 딱 한 번만 전송합니다.
-*  그 전송 안에 플래그가 ascii로 들어 있습니다.
-*  캡처를 먼저 걸어 두고 버튼을 눌러야 합니다.
+The goal of this stage is as follows:
+*  CAN frames do not queue up and wait. They are on the wire for a moment and then they are gone.
+*  Whoever was listening heard it. For everyone else it did not happen.
+*  This car's key fob transmits exactly once per button press.
+*  That transmission carries the flag in ascii.
+*  You need to start the capture first and press the button second.
 
-과제:
-*  캡처를 먼저 시작하세요. 다른 터미널을 쓰거나 `&`로 백그라운드에 두세요.
+Task:
+*  Start capturing. Use a second terminal, or put it in the background with `&`.
 
 ```
 candump -a vcan0 > /tmp/capture.txt &
 ```
 
-*  그다음 포브 버튼을 누르세요.
+*  Then press the fob button.
 
 ```
 /challenge/press-fob
 ```
 
-*  캡처 파일에서 ascii 텍스트가 보이는 frame을 찾으세요.
+*  Find the frame with readable ascii in your capture file.
 
 ```
 grep -a pwn /tmp/capture.txt
 ```
 
-힌트:
-*  순서를 지키세요. 누르고 나서 캡처를 걸면 빈 캡처만 남고, 오류는 나오지 않습니다.
-*  실패했으면 그냥 다시 하세요. 누르는 횟수에는 제한이 없습니다.
-*  백그라운드 캡처를 멈출 때는 `kill %1`을 쓰세요.
-*  이 순서를 기억해 두세요. 이후 모든 문제에서 전제가 됩니다.
+Hints:
+*  Get the order right. Capturing after the press leaves you an empty capture, and nothing reports an error.
+*  Just do it again if you get it wrong. There is no limit on presses.
+*  Stop a backgrounded capture with `kill %1`.
+*  Remember this ordering. Every challenge after this one assumes it.
 
-캡처에 남은 ascii 텍스트가 플래그입니다!
+The ascii text left in your capture is the flag!

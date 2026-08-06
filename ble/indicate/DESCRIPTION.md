@@ -1,34 +1,34 @@
-# confirmation을 보내며 indication 끝까지 받기 (Indicate)
+# Confirming Each Indication to Receive the Whole Log (Indicate)
 
-이 단계의 목표는 다음과 같습니다:
-*  notification은 보내고 잊는 방식이라 도착하지 않아도 아무도 모릅니다. 중요한 것에는 그 거래가 맞지 않습니다.
-*  그래서 ATT에는 두 번째 방식인 **indication**이 있습니다. 클라이언트가 Handle Value Confirmation으로 확인해야 다음 것이 옵니다.
-*  한 번에 하나씩, 확인받으며, 순서대로 옵니다.
-*  이 이모빌라이저는 audit log를 그 방식으로 보관합니다.
-*  indication에 맞는 값으로 subscribe하고, record마다 confirmation을 보내며 log를 끝까지 받아야 합니다.
+The goal of this stage is as follows:
+*  A notification is fire and forget. The peripheral pushes it and moves on, and if it never arrived, nobody finds out.
+*  For anything that matters that is the wrong trade, so ATT has a second push: the **indication**, which the client must acknowledge with a Handle Value Confirmation before the peripheral sends another.
+*  One outstanding at a time, acknowledged, in order.
+*  This immobiliser keeps an audit log that way.
+*  You need to subscribe with the value indications require, and confirm every record, until you have the whole log.
 
-과제:
-*  이 characteristic의 CCCD를 찾으세요.
-*  **indication에 맞는 값**으로 subscribe하세요. `0x0001`과 `0x0002`는 다릅니다.
-*  도착하는 record마다 confirmation을 보내며 끝까지 받으세요.
+Task:
+*  Find the characteristic's CCCD.
+*  Subscribe with **the value that means indications**. `0x0001` is not `0x0002`.
+*  Confirm each record as it arrives and keep going to the end.
 
 ```
 import sys
 sys.path.insert(0, "/challenge")
 import ble
 
-client = ble.Client("<주소>")
+client = ble.Client("<address>")
 client.subscribe(<cccd handle>)
 for handle, value in client.events_stream(timeout=5):
     print(hex(handle), value)
 ```
 
-*  받은 record를 순서대로 이어 붙이세요.
+*  Join the records in order.
 
-힌트:
-*  CCCD 값을 그 characteristic이 실제로 하는 일에 맞추세요. indication만 하는 쪽에 notification 값을 쓰면 아무 일도 일어나지 않습니다.
-*  듣기만 하지 마세요. confirmation을 보내지 않으면 첫 번째에서 멈추고 나머지를 영영 기다립니다.
-*  `/challenge/ble.py`의 클라이언트를 쓰세요. confirmation을 대신 보내 줍니다.
-*  `bleak`을 쓰려면 `/usr/bin/python3`으로 실행하세요.
+Hints:
+*  Match the CCCD value to what the characteristic actually does. Subscribing for notifications on something that only indicates achieves nothing.
+*  Do not just listen. Without a confirmation you get exactly one record and wait forever for the rest.
+*  Use the client in `/challenge/ble.py`, which sends the confirmations for you.
+*  If you want `bleak`, run it with `/usr/bin/python3`.
 
-log를 전부 모으면 플래그가 됩니다!
+Collect the whole log and you have the flag!

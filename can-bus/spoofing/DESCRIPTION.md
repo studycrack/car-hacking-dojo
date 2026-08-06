@@ -1,27 +1,27 @@
-# signal을 역공학해서 계기판 속이기 (Spoofing)
+# Reverse Engineering a Signal to Lie to the Cluster (Spoofing)
 
-이 단계의 목표는 다음과 같습니다:
-*  현장에서는 메시지 layout을 아무도 알려주지 않습니다. ID와 바이트 위치는 제조사·차종·연식마다 다르고 공개되지도 않습니다.
-*  그래서 화면에 보이는 값과 버스에서 캡처한 바이트를 맞춰 보며 알아냅니다.
-*  진짜 휠 속도 센서가 초당 5번 사실을 보내고 있고, 계기판은 마지막에 도착한 값을 믿습니다.
-*  계기판이 **정확히 133 km/h**를 가리키게 만들고, 그 값을 **3초 동안** 유지해야 합니다.
+The goal of this stage is as follows:
+*  In the field nobody hands you a message layout. Identifiers and byte positions vary by manufacturer, model and year, and are not published.
+*  So you work them out by lining up what you can see on a display against what you can capture on the bus.
+*  A real wheel speed sensor is transmitting the truth five times a second, and the cluster believes whatever arrived last.
+*  You need to make the cluster read **exactly 133 km/h** and hold it there for **three seconds**.
 
-과제:
-*  계기판 화면을 띄우세요.
+Task:
+*  Bring up the instrument cluster.
 
 ```
 /challenge/dashboard
 ```
 
-*  바늘을 따라 움직이는 바이트를 찾으세요. `candump`는 너무 빨리 흘러가니 `cansniffer`를 쓰세요.
+*  Find the bytes that track the needle. `candump` scrolls too fast, so use `cansniffer`.
 
 ```
 cansniffer -c vcan0
 ```
 
-*  ID마다 한 줄이 유지되고 바뀐 바이트가 색으로 표시됩니다. `q`로 나오세요.
-*  바이트 쌍과 화면 값을 비교해 인코딩을 역산하세요. 단순한 km/h가 아닙니다.
-*  계기판이 **듣는** ID로, 133 km/h에 해당하는 값을 3초 동안 계속 보내세요.
+*  It keeps one line per identifier and colours the bytes that change. Quit with `q`.
+*  Compare the byte pair against the displayed value to recover the encoding. It is not plain km/h.
+*  Transmit 133 km/h, in that encoding, on the identifier the cluster *listens to*, continuously for three seconds.
 
 ```
 import sys
@@ -32,10 +32,10 @@ bus = vcan.Bus("vcan0")
 bus.send(0x123, bytes([0x11, 0x22]))
 ```
 
-힌트:
-*  바늘을 따라가는 ID를 하나로 단정하지 마세요. 하나는 계기판이 **듣는** 값이고, 다른 하나는 계기판이 **알리는** 값입니다.
-*  **화면으로 판단하지 마세요.** 화면은 상태 frame이 말하는 대로 그리므로, 상태 frame 쪽에 주입하면 계기판은 아무것도 믿지 않았는데 화면에는 133이 뜹니다.
-*  둘을 구분하려면 함께 실린 값을 보세요. 상태 frame에는 속도 옆에 엔진 RPM이 있고, 휠 속도 센서는 엔진 상태를 알 리가 없습니다.
-*  셸에서 `cansend`를 반복하지 마세요. 진짜 센서를 밀어낼 속도가 나오지 않습니다. 파이썬으로 직접 붙으세요.
+Hints:
+*  Do not assume there is only one identifier tracking the needle. One is what the cluster **listens to**, the other is what the cluster **reports**.
+*  **Do not judge by the display.** It draws whatever the status frame says, so injecting on the status frame puts 133 on the screen without the cluster having believed anything.
+*  Tell them apart by what travels alongside. The status frame carries engine RPM next to the speed, and a wheel speed sensor has no way to know the engine's state.
+*  Do not loop `cansend` in the shell. It will not outpace the real sensor. Drive the bus from python instead.
 
-계기판이 133을 믿기 시작하면 플래그가 버스로 나옵니다. `candump -a vcan0`으로 확인하세요!
+Get the cluster to believe 133 and the flag goes out on the bus. Watch for it with `candump -a vcan0`!

@@ -1,35 +1,35 @@
-# DTC를 읽고 지워서 흔적 없애기 (Fault Memory)
+# Reading and Clearing DTCs to Cover Your Tracks (Fault Memory)
 
-이 단계의 목표는 다음과 같습니다:
-*  컨트롤러는 할 수 없는 request를 받으면 `7F`만 답하고 잊지 않습니다. **DTC**(고장 코드)를 남깁니다.
-*  DTC는 ID 3바이트와 상태 1바이트로 이루어지고, 정비사가 지울 때까지 남아 있습니다.
-*  그래서 컨트롤러의 service를 훑고 다니면, 마음에 들지 않은 request마다 DTC가 한 줄씩 쌓입니다.
-*  이 컨트롤러에는 플래그를 내주는 릴리스 routine이 있는데, **DTC가 하나라도 남아 있는 동안에는 실행하지 않습니다.**
-*  탐색으로 쌓인 DTC를 지운 뒤 릴리스 routine을 실행해야 합니다.
+The goal of this stage is as follows:
+*  A controller handed a request it cannot serve does not just answer `7F` and forget. It records a **DTC**.
+*  A DTC is three bytes of identifier and one of status, and it stays until a technician clears it.
+*  So sweeping a controller's services leaves one line of fault memory per request it did not like.
+*  This controller has a release routine that hands over the flag, and it **will not run while a single DTC remains**.
+*  You need to clear the fault memory your sweep created, then run the release routine.
 
-과제:
-*  릴리스 routine의 ID를 찾으세요. `31 01 <id>`로 훑으며, `requestOutOfRange`가 아닌 응답이 나오는 지점이 정답입니다.
-*  지금 자신이 어떤 흔적을 남겼는지 확인하세요.
+Task:
+*  Find the release routine's identifier. Sweep with `31 01 <id>`; the identifier that answers anything other than `requestOutOfRange` is the one.
+*  Look at the trail you have left.
 
 ```
 19 02 FF
 ```
 
-*  응답 형식을 확인하세요.
-   *  `19 02 <mask>`는 상태 바이트가 mask와 겹치는 DTC를 돌려줍니다. 전부 보려면 `FF`를 쓰세요.
-   *  응답은 `59 02`, 가용 mask, 그다음 DTC 하나당 4바이트입니다.
-*  DTC를 전부 지우세요.
+*  Read the response format.
+   *  `19 02 <mask>` returns DTCs whose status byte overlaps the mask. Use `FF` to see all of them.
+   *  The response is `59 02`, an availability mask, then four bytes per DTC.
+*  Clear the fault memory.
 
 ```
 14 FF FF FF
 ```
 
-*  곧바로 릴리스 routine을 실행하세요.
+*  Run the release routine immediately after.
 
-힌트:
-*  **순서를 지키세요.** 탐색을 먼저 끝내고, 지우고, 그다음 실행해야 합니다.
-*  routine을 찾는 도중에 지우지 마세요. 남은 탐색이 다시 흔적을 쌓습니다.
-*  진행하면서 `19 02 FF`를 계속 읽으세요. 지금 자신이 어떻게 보이는지 알 수 있습니다.
-*  지운 다음에는 DTC를 남기지 않는 request만 보내세요.
+Hints:
+*  **Get the order right.** Finish the sweep, then clear, then run.
+*  Do not clear while you are still hunting for the routine. The rest of the sweep just fills the memory again.
+*  Read `19 02 FF` as you go, so you can see how you look right now.
+*  After clearing, send only requests that leave no DTC behind.
 
-릴리스 routine이 실행되면 응답에 플래그가 담겨 옵니다!
+Run the release routine and its response carries the flag!

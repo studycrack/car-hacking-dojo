@@ -1,35 +1,35 @@
-# alive counter와 checksum을 복원해 frame 위조하기 (E2E)
+# Recovering an Alive Counter and Checksum to Forge a Frame (E2E)
 
-이 단계의 목표는 다음과 같습니다:
-*  앞에서 속인 계기판은 도착한 것을 그대로 믿었지만, 요즘 모듈은 그렇지 않습니다.
-*  8바이트 안에는 서명을 넣을 자리가 없어서, 안전 관련 메시지에는 AUTOSAR End-to-End 보호에서 온 작은 필드 두 개가 붙습니다.
-   *  **alive counter** — 전송할 때마다 1씩 증가합니다.
-   *  **checksum** — payload에 대해 계산합니다.
-*  이 차의 조향 보조 모듈은 `0x1F5`로 토크 요청을 받고, 두 필드가 맞지 않으면 거부합니다.
-*  계산 방법은 알려드리지 않습니다. 직접 복원해야 합니다.
-*  조향 토크 `0x0BB8`을 담은 frame을 **연속 8개** 받아들이게 만들어야 합니다.
+The goal of this stage is as follows:
+*  The cluster you lied to earlier believed whatever arrived. Modern modules do not.
+*  There is no room for a signature in eight bytes, so safety-relevant messages carry two small fields instead, from AUTOSAR End-to-End protection.
+   *  an **alive counter**, incremented on every transmission
+   *  a **checksum**, computed over the payload
+*  This car's steering assist module takes torque requests on `0x1F5` and rejects anything whose two fields do not agree.
+*  Nobody is going to tell you how they are computed. You have to recover both.
+*  You need to get **eight consecutive frames** carrying a steering torque of `0x0BB8` accepted.
 
-과제:
-*  캡처를 먼저 걸고, 정상적으로 보호된 요청의 표본을 받으세요.
+Task:
+*  Start capturing, then have a properly protected request generated for you.
 
 ```
 candump vcan0,1F5:7FF &
 /challenge/park-assist
 ```
 
-*  표본에서 마지막 두 바이트가 어떻게 움직이는지 관찰하세요.
-   *  하나는 전송마다 규칙적으로 증가합니다.
-   *  다른 하나는 앞쪽 바이트가 바뀔 때 함께 바뀝니다.
-*  두 필드의 계산 방법을 복원하세요.
-*  토크 값을 `0x0BB8`로 바꾼 frame을 두 필드까지 맞춰 연속 8개 보내세요.
-*  `0x1F6`으로 판정을 확인하세요.
-   *  바이트 0: `01` 수락 / `10` checksum 오류 / `11` counter 오류
-   *  바이트 1: 지켜보는 값을 담은 frame을 연속 몇 개 받았는지
+*  Watch how the last two bytes move across the sample.
+   *  One increments regularly, transmission to transmission.
+   *  The other changes whenever the earlier bytes change.
+*  Recover how each field is computed.
+*  Send eight consecutive frames carrying `0x0BB8`, with both fields correct.
+*  Read the verdict off `0x1F6`.
+   *  byte 0: `01` accepted / `10` checksum wrong / `11` counter wrong
+   *  byte 1: how many consecutive frames carrying the watched value have been accepted
 
-힌트:
-*  판정 바이트를 보고 하나씩 맞추세요. 어느 검사에서 걸렸는지 알려 줍니다.
-*  `cansniffer -c vcan0`으로 보세요. 바뀌는 바이트가 색으로 드러납니다.
-*  표본을 그대로 재생하지 마세요. 값이 달라지면 보호 필드도 달라져야 합니다.
-*  바이트 1이 올라가다 `0`으로 돌아가면 그 시점의 바이트 0을 확인하세요. 중간에 하나가 거부된 것입니다.
+Hints:
+*  Work from the verdict byte one field at a time. It tells you which check you failed.
+*  Watch it with `cansniffer -c vcan0`, which colours whichever bytes are moving.
+*  Do not just replay the sample. Change the value and the protection fields have to change with it.
+*  If byte 1 climbs and then drops to `0`, look at byte 0 at that moment. One frame in the middle was rejected.
 
-연속 8개가 받아들여지면 플래그가 버스로 나옵니다. `candump -a vcan0`으로 확인하세요!
+Get eight in a row accepted and the flag goes out on the bus. Watch for it with `candump -a vcan0`!

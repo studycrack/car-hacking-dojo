@@ -5,20 +5,21 @@ resources:
     name: Controller Area Network
     expandable: false
     content: |
-      **CAN**은 두 가닥 전선으로 이루어진 broadcast 버스입니다. frame 하나는
-      11비트 *ID*와 최대 8바이트 데이터를 나르고, 프로토콜은 사실상 그게
-      전부입니다. ID는 누가 보냈는지도, 누가 받아야 하는지도 말하지 않습니다.
-      그 frame이 **무슨 뜻인지**를 말할 뿐이고, 버스에 있는 컨트롤러가 각자
-      자기와 상관있는지 판단합니다.
+      **CAN** is a two-wire broadcast bus. A frame carries an 11-bit
+      *identifier* and up to 8 bytes of data, and that is very nearly the whole
+      protocol. The identifier does not say who sent the frame or who should
+      receive it --- it says what the frame *means*, and every controller on the
+      bus decides for itself whether it cares.
 
-      확인할 발신 주소가 없으니 인증할 대상도 없습니다. 이 모듈의 모든 공격이
-      그 사실 하나에서 나옵니다.
+      There is no source address to check, so there is nothing to authenticate
+      against. Every attack in this module follows from that one fact.
 
-      워크스페이스에는 달리는 자동차가 연결된 `vcan0`과 표준 리눅스 CAN 도구가
-      있습니다. 들을 때는 `candump`, 보낼 때는 `cansend`입니다.
+      Your workspace has a CAN interface named `vcan0` attached to a running
+      vehicle, and the standard Linux CAN tooling to work with it: `candump` to
+      listen, `cansend` to transmit.
 
   - type: header
-    content: 버스 읽기
+    content: Reading the bus
 
   - id: sniffing
     type: challenge
@@ -33,7 +34,7 @@ resources:
     name: Catching a One-Shot
 
   - type: header
-    content: frame replay하고 위조하기
+    content: Replaying and forging frames
 
   - id: injection
     type: challenge
@@ -44,7 +45,7 @@ resources:
     name: Rolling Codes
 
   - type: header
-    content: 바이트의 뜻 알아내기
+    content: Working out what the bytes mean
 
   - id: spoofing
     type: challenge
@@ -55,7 +56,7 @@ resources:
     name: Reading the Database
 
   - type: header
-    content: checksum과 MAC 방어 뚫기
+    content: Defeating a checksum and a MAC
 
   - id: integrity
     type: challenge

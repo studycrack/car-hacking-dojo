@@ -1,33 +1,33 @@
-# Service Data 구조에서 payload만 뽑아내기 (Service Data)
+# Extracting the Payload From a Service Data Structure (Service Data)
 
-이 단계의 목표는 다음과 같습니다:
-*  Manufacturer Specific Data는 회사 식별자 2바이트 뒤가 자유였지만, advertising에는 더 구조적인 것도 있습니다.
-*  **Service Data**(AD 타입 `0x16`)는 데이터가 어느 service의 것인지 지정합니다. 16비트 service UUID로 시작하고, 그 뒤에 payload가 옵니다.
+The goal of this stage is as follows:
+*  Manufacturer Specific Data left everything after two bytes of company identifier free. Advertising has more structured members too.
+*  **Service Data**, AD type `0x16`, says which service the data belongs to. It opens with a 16-bit service UUID, and the payload follows.
 
 ```
 12 16 6f fd 00 70 77 6e ...
 ^  ^  ^^^^^ ^^^^^^^^^^^^^
-|  |  UUID  실제 데이터
-|  타입 0x16
-길이
+|  |  UUID  the actual data
+|  type 0x16
+length
 ```
 
-*  이 트래커도 앞의 beacon처럼 조각을 돌려가며 broadcast합니다.
-*  타입에 맞게 payload가 시작하는 위치를 잡아 조각만 뽑아내야 합니다.
+*  This tracker rotates through fragments the same way the beacon did.
+*  You need to start reading at the right offset for the type and pull out just the fragments.
 
-과제:
-*  advertising을 관찰해 타입이 `0x16`인 AD 구조를 찾으세요.
+Task:
+*  Watch the advertising and find the AD structure whose type is `0x16`.
 
 ```
 hcidump --passive
 ```
 
-*  그 구조에서 **UUID 2바이트를 건너뛴 다음**부터 읽으세요.
-*  조각을 모두 모아 위치 바이트로 정렬하고, 그 바이트를 떼고 이어 붙이세요.
+*  Read from **after the two UUID bytes**.
+*  Collect the fragments, sort by the position byte, strip it, and join.
 
-힌트:
-*  구조 전체를 데이터로 취급하지 마세요. 조각마다 앞에 UUID 2바이트가 붙어서, 거의 맞아 보이는데 틀린 상태가 됩니다.
-*  결과에 같은 두 글자가 규칙적으로 끼어들면 UUID를 걷어내지 않은 것입니다. 오프셋을 2 늘리세요.
-*  타입을 먼저 확인하고 layout을 적용하세요. AD 구조는 타입마다 배치가 정해져 있습니다.
+Hints:
+*  Do not treat the whole structure as data. Every fragment picks up two bytes of UUID in front, which leaves you something that looks almost right and is not, which is harder to notice than being completely wrong.
+*  If the same two characters keep appearing at regular intervals, you did not strip the UUID. Move the offset along by two.
+*  Check the type first and then apply its layout. AD structures are typed, and each type lays its bytes out its own way.
 
-UUID를 걷어내고 순서대로 합치면 플래그가 됩니다!
+Strip the UUID, join in order, and you have the flag!

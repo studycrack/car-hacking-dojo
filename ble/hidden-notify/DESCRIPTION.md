@@ -1,34 +1,35 @@
-# declaration에 없는 기능 쓰기 (Hidden Notify)
+# Using a Capability the Declaration Does Not Advertise (Hidden Notify)
 
-이 단계의 목표는 다음과 같습니다:
-*  이 동글을 열거하면 디버그 characteristic이 `debug channel idle`을 돌려줍니다.
-*  그 declaration에는 `READ`만 있습니다. notify property가 없으니 subscribe할 것도 없어 보이고, declaration을 보고 화면을 만드는 도구는 그 선택지를 아예 보여주지 않습니다.
-*  하지만 attribute table을 보면 그 characteristic 아래에 `0x2902`가 앉아 있습니다.
-*  CCCD는 notification을 켜기 위한 것입니다. notification을 못 보내는 characteristic에 있을 이유가 없습니다.
-*  있으면 안 될 그 CCCD에 값을 써서 notification을 받아내야 합니다.
+The goal of this stage is as follows:
+*  Enumerate this dongle and its debug characteristic reads `debug channel idle`.
+*  Its declaration says `READ` and nothing else. No notify property means nothing to subscribe to, and a tool that builds its interface from declarations will not even offer you the option.
+*  But look at the **attribute table** rather than the characteristic list and there is a `0x2902` sitting underneath it.
+*  A CCCD exists to enable notifications. It has no business being attached to a characteristic that cannot send them.
+*  Somebody turned off the notify property to tidy up an interface and left the code that sends notifications exactly where it was.
+*  You need to write to that CCCD and receive what it pushes.
 
-과제:
-*  characteristic 목록에서 디버그 characteristic의 property를 확인하세요. `READ`만 있습니다.
-
-```
-gatttool -b <주소> --characteristics
-```
-
-*  attribute table을 열어 그 아래에 `0x2902`가 있는지 확인하세요.
+Task:
+*  Check the debug characteristic's properties in the characteristic list. `READ` only.
 
 ```
-gatttool -b <주소> --char-desc
+gatttool -b <address> --characteristics
 ```
 
-*  그 CCCD에 값을 쓰고, 연결을 유지한 채 들으세요.
+*  Open the attribute table and confirm there is a `0x2902` beneath it.
 
 ```
-gatttool -b <주소> --char-write-req -a <cccd handle> -n 0100 --listen
+gatttool -b <address> --char-desc
 ```
 
-힌트:
-*  declaration의 property 바이트를 권한으로 믿지 마세요. **펌웨어가 밝힌 의도**일 뿐이고 스택이 강제하지 않습니다.
-*  CCCD에 그냥 쓰세요. 쓰기가 들어올 때 property를 확인하는 코드는 없습니다.
-*  characteristic 값을 다시 읽지 마세요. 여전히 `debug channel idle`입니다. 값이 아니라 CCCD를 건드려야 합니다.
+*  Write to that CCCD and stay connected, listening.
 
-subscribe가 켜지면 notification으로 플래그가 도착합니다!
+```
+gatttool -b <address> --char-write-req -a <cccd handle> -n 0100 --listen
+```
+
+Hints:
+*  Do not treat the declaration's property byte as a permission. It is **what the firmware says it intends**, and the stack does not enforce it.
+*  Just write the CCCD. Nothing checks the properties when a write arrives.
+*  Do not go back to reading the characteristic value. It still says `debug channel idle`. The CCCD is the thing to touch.
+
+Turn the subscription on and the flag arrives as a notification!

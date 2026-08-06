@@ -1,29 +1,29 @@
-# 컨트롤러와 DID 열거하기 (Enumeration)
+# Enumerating Controllers and Data Identifiers (Enumeration)
 
-이 단계의 목표는 다음과 같습니다:
-*  앞에서는 엔진 컨트롤러가 `0x7E0`에 있다고 알려드렸지만, 처음 보는 차에서는 아무도 알려주지 않습니다.
-*  ISO 15765-4는 진단 request용으로 `0x7E0`부터 `0x7E7`까지를 예약해 두었고, 응답은 여덟 개 위인 `0x7E8`부터 `0x7EF`까지입니다.
-*  제조사는 자기 컨트롤러를 원하는 자리에 두며, 흥미로운 것일수록 규격이 말하는 자리에 없습니다.
-*  `0x700`부터 `0x7FF`까지 훑어 **있어서는 안 될 컨트롤러**를 찾고, 그 기록을 읽어야 합니다.
+The goal of this stage is as follows:
+*  Last time you were told the engine controller sits at `0x7E0`. On a car you have never seen, nobody tells you.
+*  ISO 15765-4 reserves `0x7E0` through `0x7E7` for diagnostic requests, with responses eight above, at `0x7E8` through `0x7EF`.
+*  Manufacturers put their own controllers wherever they like, and the interesting ones are rarely where the specification says.
+*  You need to sweep `0x700` through `0x7FF`, find the controller that should not be there, and read what it holds.
 
-과제:
-*  각 ID에 `3E 00`(TesterPresent)을 보내 어떤 주소가 응답하는지 확인하세요.
-*  찾아낸 컨트롤러마다 service `0x22`로 DID를 훑으세요.
+Task:
+*  Send `3E 00` (TesterPresent) to each identifier and see which addresses answer.
+*  Sweep data identifiers on every controller you find, using service `0x22`.
 
 ```
 isotpreq vcan0 7E0 7E8 22F190
 ```
 
-*  응답을 두 종류로 나누세요.
-   *  기록이 있으면 `62`에 DID를 붙여 답합니다.
-   *  없으면 `7F 22 31`(requestOutOfRange)로 답합니다.
-*  규격이 정해 둔 범위 밖에서 응답한 컨트롤러의 기록을 읽으세요.
+*  Sort the answers into two kinds.
+   *  A record that exists comes back as `62` followed by the identifier.
+   *  One that does not comes back as `7F 22 31` (requestOutOfRange).
+*  Read the records off the controller that answered outside the range the specification set aside.
 
-힌트:
-*  스캔에는 `3E 00`을 쓰세요. 모든 컨트롤러가 구현하고 있고 상태를 바꾸지 않습니다.
-*  `0xF1xx` 대역을 먼저 훑으세요. 부품번호, 소프트웨어 버전, 일련번호가 들어가는 자리입니다.
-*  응답 주소는 요청 주소보다 여덟 개 위라는 규칙을 그대로 적용하세요.
-*  매번 프로세스를 띄우지 말고 스크립트로 도세요. `vcan.py`와 `isotp.py`를 `/challenge`에서 가져다 쓸 수 있습니다.
+Hints:
+*  Sweep with `3E 00`. Every controller implements it and it changes no state.
+*  Try the `0xF1xx` block first. That is where part numbers, software versions and serial numbers live.
+*  Apply the same rule for response addresses: eight above the request.
+*  Do not spawn a process per request. Script it, importing `vcan.py` and `isotp.py` from `/challenge`.
 
 ```
 import sys
@@ -34,4 +34,4 @@ bus = vcan.Bus("vcan0")
 response = isotp.request(bus, 0x7E0, 0x7E8, bytes.fromhex("3E00"), timeout=0.2)
 ```
 
-숨어 있던 컨트롤러의 기록 안에 플래그가 있습니다!
+The records on the controller that was hiding carry the flag!

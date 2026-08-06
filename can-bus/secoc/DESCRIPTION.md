@@ -1,38 +1,38 @@
-# SecOC key 없이 인증된 frame 위조하기 (SecOC)
+# Forging an Authenticated Frame Without the Key (SecOC)
 
-이 단계의 목표는 다음과 같습니다:
-*  **SecOC**는 중요한 frame에 **MAC**(메시지 인증 코드)을 붙입니다. 송신자와 수신자가 key를 공유합니다.
-*  전송할 때마다 payload와 **freshness 값**과 잘린 MAC이 함께 실립니다.
-*  freshness는 절대 뒤로 가면 안 되는 값이라서, 지나간 frame을 그대로 재생하면 거부됩니다.
-*  이 차의 바디 컨트롤러는 `0x1B0`으로 도어 명령을 받습니다. payload 2바이트, freshness 1바이트, MAC 3바이트로 총 6바이트입니다.
-*  상태는 `0x1B1`로 알립니다.
-   *  바이트 0: `01` 잠김 / `00` 열림
-   *  바이트 1: 마지막으로 받아들인 freshness
-   *  바이트 2: `01` 수락 / `02` MAC 검증 실패 / `03` freshness가 앞서 있지 않음
-*  key 없이, 주인이 부탁한 적 없는 차의 문을 열어야 합니다.
+The goal of this stage is as follows:
+*  **SecOC** attaches a **MAC** to frames that matter, computed with a key the sender and receiver share.
+*  Every transmission carries the payload, a **freshness value** and a truncated MAC.
+*  Freshness must never go backwards, so replaying a frame you saw earlier is refused.
+*  This car's body controller takes door commands on `0x1B0`: two bytes of payload, one of freshness, three of MAC, six in total.
+*  It reports on `0x1B1`.
+   *  byte 0: `01` locked / `00` unlocked
+   *  byte 1: the last freshness value it accepted
+   *  byte 2: `01` accepted / `02` MAC did not verify / `03` freshness was not ahead
+*  You need to unlock a car the owner did not ask you to unlock, without the key.
 
-과제:
-*  차가 스스로 잠그는 모습을 여러 번 관찰하세요. 4초마다 한 번씩 잠금 명령이 나갑니다.
+Task:
+*  Watch the car lock itself several times. A lock command goes out every four seconds.
 
 ```
 candump vcan0,1B0:7FF
 ```
 
-*  포브도 눌러서 열림 명령이 어떻게 생겼는지 확인하세요.
+*  Press the fob too, so you know what an unlock command looks like.
 
 ```
 /challenge/press-fob
 ```
 
-*  캡처한 frame들을 비교해 **MAC이 무엇을 대상으로 계산되었는지** 알아내세요.
-   *  payload가 같을 때 MAC이 어떻게 되는지 보세요.
-   *  freshness가 달라질 때 MAC이 어떻게 되는지 보세요.
-*  알아낸 사실로 열림 명령을 만들어 보내고, `0x1B1`로 결과를 확인하세요.
+*  Compare the frames you captured and work out **what the MAC was computed over**.
+   *  Watch what the MAC does when the payload is the same.
+   *  Watch what the MAC does when the freshness differs.
+*  Use what you found to build an unlock command, send it, and read the result off `0x1B1`.
 
-힌트:
-*  암호 자체를 공격하지 마세요. key가 없으면 MAC은 계산할 수 없습니다.
-*  대신 MAC이 무엇을 덮지 않는지 찾으세요. 계산에서 빠진 필드는 마음대로 바꿔도 검증을 통과합니다.
-*  바이트 2를 구분해서 읽으세요. `02`면 MAC이 틀린 것이고 `03`이면 freshness 문제입니다. 둘은 다릅니다.
-*  freshness는 바이트 1이 알려 주는 값보다 앞서게 잡되, 너무 멀리 가지 마세요.
+Hints:
+*  Do not attack the cryptography. Without the key you cannot compute a MAC.
+*  Find what the MAC does not cover instead. A field left out of the computation can be changed freely and still verify.
+*  Read byte 2 carefully. `02` means the MAC was wrong; `03` means the freshness was. They are different problems.
+*  Pick a freshness ahead of what byte 1 reports, but do not reach too far ahead.
 
-문이 열리면 플래그가 버스로 나옵니다. `candump -a vcan0`으로 확인하세요!
+Unlock the doors and the flag goes out on the bus. Watch for it with `candump -a vcan0`!

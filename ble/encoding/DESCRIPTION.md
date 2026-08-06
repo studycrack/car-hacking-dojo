@@ -1,35 +1,35 @@
-# hex와 base64로 감춰 둔 값 디코딩하기 (Encoding)
+# Decoding Values Stored as Hex and Base64 (Encoding)
 
-이 단계의 목표는 다음과 같습니다:
-*  이 모듈은 휴대폰을 key로 쓰게 해 주는 장치입니다.
-*  characteristic을 읽어 보면 아무 뜻도 없어 보이는 값이 나옵니다.
+The goal of this stage is as follows:
+*  This module is the one that lets a phone act as a key.
+*  Read its characteristics and you get a value that looks like nothing at all.
 
 ```
 36 31 34 65 33 32 62 61 39 63
 ```
 
-*  이것은 암호화가 아니라 ascii 숫자와 알파벳입니다. 펌웨어가 바이트 배열을 **hex 텍스트**로 저장하면 이런 모양이 됩니다.
-*  나머지 절반은 다른 방식으로 저장되어 있습니다. padding이 붙고 영숫자로만 이루어진, **base64** 특유의 모양입니다.
-*  두 조각을 각각 알맞게 디코딩하고, descriptor가 알려 주는 순서대로 이어 붙여야 합니다.
+*  That is not encryption. It is ascii digits and letters, which is what firmware storing a byte array as **hex text** looks like on the wire.
+*  The other half is stored differently: padded, alphanumeric, the shape **base64** always has.
+*  You need to decode each half appropriately and join them in the order the descriptors give.
 
-과제:
-*  attribute table을 훑어 두 조각을 모두 읽으세요.
-*  각 조각이 어떤 인코딩인지 판단하세요.
-   *  `0-9a-f`만 나오고 길이가 짝수면 hex 텍스트입니다.
-   *  `=`로 끝나거나 대소문자가 섞여 있으면 base64입니다.
-*  각각 디코딩하세요.
+Task:
+*  Walk the attribute table and read both halves.
+*  Decide which encoding each one is.
+   *  Only `0-9a-f`, even length: hex text.
+   *  Ends in `=`, or mixes case: base64.
+*  Decode each one.
 
 ```
 echo -n '36313465...' | xxd -r -p
 echo -n 'cHduLmNv...' | base64 -d
 ```
 
-*  descriptor를 읽어 순서를 확인하고 이어 붙이세요.
+*  Read the descriptors for the ordering, then join.
 
-힌트:
-*  암호를 풀려고 하지 마세요. 어느 쪽도 key가 없고 변환 방식이 공개되어 있습니다.
-*  모양만 보고 판단하세요. 보자마자 알아보는 것이 이 문제의 요령입니다.
-*  값만 읽고 끝내지 마세요. 두 조각의 순서는 descriptor에 적혀 있습니다.
-*  결과가 플래그 형식이 아니면 순서를 바꿔 보세요.
+Hints:
+*  Do not try to break anything. Neither half has a key, and both transformations are public.
+*  Judge by shape. Recognising them on sight is the whole skill here.
+*  Do not stop at the values. The order of the two halves is written in the descriptors.
+*  If the result is not shaped like a flag, swap the order.
 
-두 조각을 순서대로 합치면 플래그가 됩니다!
+Join the two halves in order and you have the flag!

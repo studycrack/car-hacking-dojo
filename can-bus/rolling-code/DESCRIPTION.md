@@ -1,38 +1,38 @@
-# 소비되지 않은 rolling code 골라내 차 열기 (Replay)
+# Picking an Unconsumed Rolling Code Out of a Burst (Replay)
 
-이 단계의 목표는 다음과 같습니다:
-*  rolling code는 포브와 수신기가 비밀값과 counter를 공유하는 방식입니다.
-*  수신기는 한 번 쓴 counter와 그보다 낮은 값을 다시 받지 않아서, 그대로 녹음해 다시 틀면 무시당합니다.
-*  그런데 포브는 전파 유실에 대비해 **버튼 한 번에 서로 다른 counter로 세 번** 내보냅니다.
-*  수신기는 그중 처음 해독한 것 하나만 처리하고 잠시 듣기를 멈추므로, 나머지 두 개는 소비되지 않은 채 남습니다.
-*  포브 frame은 6바이트입니다. 앞 2바이트가 counter, 뒤 4바이트가 code입니다.
-*  녹음한 지 **5초가 넘은** code로 문을 열어야 합니다.
+The goal of this stage is as follows:
+*  A rolling code has the fob and the receiver share a secret and a counter. Each press sends the counter and a code derived from it.
+*  The receiver refuses a counter it has already accepted, and anything below it, so a straight recording played back is ignored.
+*  But the fob does not transmit once. Radio gets lost, so one press goes out **three times, each with a different counter**.
+*  The receiver acts on the first one it decodes and then stops listening for a moment, which leaves the rest of the burst unconsumed.
+*  A fob frame is six bytes: two of counter, four of code.
+*  You need to unlock the car with a code recorded **more than five seconds ago**.
 
-과제:
-*  캡처를 먼저 걸고 포브를 누르세요.
+Task:
+*  Start the capture, then press the fob.
 
 ```
 candump -l vcan0 &
 /challenge/press-fob
 ```
 
-*  로그 파일에서 6바이트짜리 포브 frame 세 개를 찾으세요. counter가 1씩 다릅니다.
-*  소비되지 않은 code 하나를 고르세요.
-*  **5초 이상 기다린 뒤** 그 frame 하나만 다시 보내세요.
+*  Find the three six-byte fob frames in the log. Their counters differ by one.
+*  Pick a code the receiver did not consume.
+*  **Wait at least five seconds**, then send that one frame back.
 
 ```
-cansend vcan0 <포브ID>#<counter><code>
+cansend vcan0 <fob identifier>#<counter><code>
 ```
 
-*  `0x19A`로 결과를 확인하세요.
-   *  바이트 0: `01` 잠김 / `00` 열림
-   *  바이트 1: 지금까지 열린 횟수
-   *  바이트 2: `01` 열림 / `02` 이미 쓴 counter / `03` code 불일치
+*  Read the result off `0x19A`.
+   *  byte 0: `01` locked / `00` unlocked
+   *  byte 1: how many times it has been unlocked
+   *  byte 2: `01` unlocked / `02` counter already used / `03` code did not verify
 
-힌트:
-*  `candump -l vcan0`으로 기록하고, 다시 흘릴 때는 `canplayer -I <로그파일>`을 쓰세요.
-*  **로그를 통째로 재생하지 마세요.** 버튼을 누른 frame까지 들어 있어서, 그것이 다시 흐르면 포브가 또 눌리고 counter가 녹음한 범위 너머로 밀려납니다.
-*  보낼 frame 하나만 남기고 잘라내거나, `cansend`로 직접 보내세요.
-*  급하게 보내지 마세요. 문은 열리지만 플래그는 나오지 않습니다. 방금 지나간 code는 주인이 누른 것과 구분되지 않습니다.
+Hints:
+*  Record with `candump -l vcan0` and replay with `canplayer -I <logfile>`.
+*  **Do not replay the whole log.** It contains the button press frame, and replaying that presses the fob again, pushing the counter past everything you recorded.
+*  Cut it down to the one frame you want, or just send it with `cansend`.
+*  Do not rush the send. The doors open, but no flag: a code from a moment ago is indistinguishable from the owner pressing the button.
 
-시간이 지난 녹음으로 차가 열리면 플래그가 버스로 나옵니다. `candump -a vcan0`으로 확인하세요!
+Unlock the car from an aged recording and the flag goes out on the bus. Watch for it with `candump -a vcan0`!

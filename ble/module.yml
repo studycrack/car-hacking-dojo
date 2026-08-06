@@ -5,31 +5,34 @@ resources:
     name: The Wireless Half of the Attack Surface
     expandable: false
     content: |
-      지금까지는 커넥터를 손에 들고 차 안에 들어가야 했습니다. 최근 10년 안에
-      만들어진 차는 **Bluetooth Low Energy**로도 뒤덮여 있습니다. 차를 여는
-      휴대폰, 타이어 공기압 센서, OBD-II 포트에 꽂힌 채 잊힌 애프터마켓 동글까지
-      전부 차 바깥에서, 전파가 닿는 누구에게든 응답합니다.
+      Everything so far needed you inside the car with a connector in your
+      hand. A car built in the last decade is also covered in **Bluetooth Low
+      Energy** --- the phone that unlocks it, the tyre pressure sensors, the
+      aftermarket dongle left in the OBD-II port --- and all of it answers from
+      outside the vehicle, to anyone with a radio.
 
-      BLE의 데이터 모델은 **GATT**입니다. *attribute*가 나란히 늘어선 표이고,
-      각각 16비트 *handle*과 그것이 무엇인지 알려 주는 *UUID*를 가집니다.
-      characteristic이 값을 담고 descriptor가 거기에 설명을 붙이며, 그것을 읽고
-      쓰는 프로토콜이 **ATT**입니다. request와 response opcode 몇 개가
-      전부이고, session도 없고 기본 인증도 없으며, attribute table 전체를 훑는
-      것을 막지도 않습니다.
+      BLE's data model is **GATT**: a flat table of *attributes*, each with a
+      16-bit *handle* and a *UUID* saying what it is. Characteristics hold
+      values, descriptors annotate them, and the protocol that reads and writes
+      them is **ATT** --- a handful of request/response opcodes and nothing
+      else. There is no session, no authentication by default, and nothing
+      stopping you enumerating the whole table.
 
-      워크스페이스에는 표준 리눅스 Bluetooth 도구가 있습니다. advertising 중인
-      것을 찾을 때는 `hcitool`, 연결해서 대화할 때는 `gatttool`, 전파 자체를 볼
-      때는 `hcidump`입니다. 무언가를 subscribe한 뒤 연결을 유지하려면
-      `gatttool --listen`을 쓰세요.
+      Your workspace has the standard Linux Bluetooth tooling: `hcitool` to
+      scan for what is advertising, `gatttool` to connect and talk to it, and
+      `hcidump` to watch the air itself. Use `gatttool --listen` to stay
+      connected once you have subscribed to something.
 
-      실제 장비에서 쓰는 BlueZ 셸인 `bluetoothctl`도 그대로 동작합니다.
-      `scan on` 다음 `connect`, 그리고 `gatt` 메뉴 순서입니다.
+      `bluetoothctl`, the BlueZ shell you would use on a real machine, is here
+      too and works the same way: `scan on`, then `connect`, then its `gatt`
+      menu.
 
-      이것들로 대부분은 되지만 전부는 아닙니다. 한 번 답하고 끝나는 셸 명령으로는
-      subscribe를 열어 둔 채 peripheral을 건드리거나, 쓰기를 여러 패킷에 나눠
-      담기가 번거롭습니다. 몇몇 문제에서는 번거로운 정도가 아니라 불가능합니다.
-      도구가 올라앉은 스택을 그대로 가져다 쓸 수 있고, `/challenge/ble.py`는
-      읽어 볼 가치가 있습니다.
+      Those cover most of what follows but not all of it. A shell command that
+      exits after one reply is an awkward way to hold a subscription open while
+      you poke the peripheral with something else, or to queue a write across
+      several packets --- and for a couple of these challenges it is not
+      awkward but impossible. The stack the tools are built on is importable,
+      and `/challenge/ble.py` is worth reading:
 
           import sys
           sys.path.insert(0, "/challenge")
@@ -38,20 +41,20 @@ resources:
           client = ble.Client("aa:bb:cc:dd:ee:ff")
           client.read(handle)
           client.write(handle, b"\x01")
-          client.write_long(handle, value)      # 패킷 하나에 안 들어갈 때
-          client.subscribe(cccd_handle)         # subscribe한 뒤 밀려오는 것을 받는다
+          client.write_long(handle, value)      # more than one packet holds
+          client.subscribe(cccd_handle)         # then wait for what it pushes
           for handle, value in client.events_stream(timeout=5):
               print(hex(handle), value)
 
-      실제 peripheral을 상대할 때 쓰는 라이브러리가 편하다면 `bleak`도 설치되어
-      있고 여기서 동작합니다. 이 워크스페이스가 진짜 컨트롤러처럼 D-Bus에서
-      `org.bluez`로 응답하기 때문입니다.
+      If you would rather use the library you would use against a real
+      peripheral, `bleak` is installed and works here --- these workspaces
+      answer on D-Bus as `org.bluez` the way a genuine controller would.
 
-      쓰기 전에 알아 둘 것이 하나 있습니다. 이 장비에는 파이썬이 두 개입니다.
-      `python3`가 찾는 것은 표준 라이브러리만 가진 쪽이고, `/usr/bin/python3`는
-      워크스페이스 이미지를 만들 때 쓴 쪽입니다. `bleak`은 두 번째에 설치되어
-      있으니 경로를 직접 지정해 실행하세요. 위의 `import ble`는 어느 쪽에서도
-      동작합니다.
+      One thing to know before you try it. There are two python interpreters
+      on this machine: the one `python3` finds, which carries the standard
+      library, and `/usr/bin/python3`, which is the one the workspace image
+      was built with. `bleak` was installed into the second, so run it by
+      name --- `import ble` above works under either:
 
           /usr/bin/python3 your_script.py
 
@@ -65,7 +68,7 @@ resources:
           asyncio.run(main())
 
   - type: header
-    content: GATT attribute table 훑기
+    content: Walking a GATT table
 
   - id: discovery
     type: challenge
@@ -92,7 +95,7 @@ resources:
     name: An Interlock That Counts
 
   - type: header
-    content: peripheral이 밀어 주는 event 받기
+    content: Receiving what the peripheral pushes
 
   - id: notify
     type: challenge
@@ -115,7 +118,7 @@ resources:
     name: A Property That Lies
 
   - type: header
-    content: 연결하지 않고 advertising 읽기
+    content: Reading advertising without connecting
 
   - id: beacon
     type: challenge
@@ -130,7 +133,7 @@ resources:
     name: Typed Advertising Data
 
   - type: header
-    content: 펌웨어가 감춘 attribute 찾아내기
+    content: Finding what the firmware hid
 
   - id: hidden-handles
     type: challenge

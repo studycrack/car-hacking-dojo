@@ -1,38 +1,38 @@
-# frame을 위조해 차 문 열기 (Injection)
+# Forging a Frame to Unlock the Doors (Injection)
 
-이 단계의 목표는 다음과 같습니다:
-*  CAN frame에는 발신자 정보가 없어서, 버스에 닿으면 누구든 어떤 메시지든 보낼 수 있습니다.
-*  이 차의 바디 컨트롤 모듈(BCM)은 아래 두 ID를 씁니다.
+The goal of this stage is as follows:
+*  A CAN frame carries no evidence of who sent it, so anything that can reach the bus can originate any message on it.
+*  This car's body control module (BCM) speaks the following:
 
-| ID | 방향 | layout |
+| Identifier | Direction | Layout |
 | --- | --- | --- |
-| `0x19A` | BCM 송신 | 바이트 0: `01` 잠김 / `00` 열림. 바이트 2-3: session counter(big-endian) |
-| `0x19B` | BCM 수신 | 바이트 0: `02` 열기. 바이트 1: `FF` 전체 도어. 바이트 2-3: 현재 session counter |
+| `0x19A` | BCM broadcast | byte 0: `01` locked / `00` unlocked. bytes 2-3: session counter, big endian |
+| `0x19B` | BCM receive | byte 0: `02` to unlock. byte 1: `FF` for all doors. bytes 2-3: the session counter currently being advertised |
 
-*  session counter는 암호화 없이 그대로 broadcast되고, 30초마다 새 값으로 바뀝니다.
-*  그 값을 읽어 `0x19B` frame을 위조해서 문을 열어야 합니다.
+*  The session counter is broadcast in the clear and rotates every thirty seconds.
+*  You need to read it, then forge a `0x19B` frame with it and unlock the doors.
 
-과제:
-*  `0x19A`를 관찰해 현재 session counter를 읽으세요.
+Task:
+*  Watch `0x19A` and read the current session counter.
 
 ```
 candump vcan0,19A:7FF
 ```
 
-*  그 값으로 `0x19B` frame을 만들어 보내세요. `cansend`는 `candump`와 같은 표기를 씁니다.
+*  Build a `0x19B` frame with it. `cansend` uses the notation `candump` prints.
 
 ```
 cansend vcan0 19B#02FFABCD
 ```
 
-*  바이트를 다음과 같이 채우세요.
-   *  바이트 0은 `02`(열기), 바이트 1은 `FF`(전체 도어)입니다.
-   *  바이트 2-3에는 방금 읽은 session counter를 넣으세요. 위 예시의 `ABCD` 자리입니다.
-*  `0x19A`의 바이트 0이 `01`에서 `00`으로 바뀌는지 확인하세요.
+*  Fill the bytes as follows.
+   *  Byte 0 is `02` to unlock, byte 1 is `FF` for all doors.
+   *  Bytes 2-3 take the session counter you just read, in place of `ABCD` above.
+*  Confirm that byte 0 of `0x19A` goes from `01` to `00`.
 
-힌트:
-*  읽고 바로 보내세요. counter가 30초마다 바뀝니다.
-*  다른 터미널에 `candump`를 띄워 두세요. counter와 결과를 동시에 볼 수 있습니다.
-*  바이트 0이 계속 `01`이면 counter를 다시 읽어서 보내세요. 이미 지난 값입니다.
+Hints:
+*  Read it and send immediately. The counter rotates every thirty seconds.
+*  Keep a `candump` running in a second terminal so you see the counter and the result at once.
+*  If byte 0 stays `01`, read the counter again and resend. Yours was stale.
 
-문이 열리면 플래그가 버스로 나옵니다. `candump -a vcan0`으로 확인하세요!
+Unlock the doors and the flag goes out on the bus. Watch for it with `candump -a vcan0`!

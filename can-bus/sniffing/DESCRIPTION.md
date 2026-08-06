@@ -1,36 +1,36 @@
-# CAN 버스 훔쳐듣기 (Sniffing)
+# Eavesdropping on the CAN Bus (Sniffing)
 
-이 단계의 목표는 다음과 같습니다:
-*  워크스페이스의 가상 CAN 인터페이스 `vcan0`에 시뮬레이션된 자동차가 연결되어 있습니다.
-*  CAN은 broadcast 버스이므로 모든 컨트롤러가 모든 frame을 봅니다.
-*  frame 하나는 11비트 ID와 최대 8바이트 데이터로 이루어지고, ID는 그 frame의 뜻을 가리킵니다.
-*  컨트롤러 하나가 플래그를 ascii 텍스트로 버스에 흘리고 있습니다.
-*  그 frame을 찾아내야 합니다.
+The goal of this stage is as follows:
+*  Your workspace has a virtual CAN interface, `vcan0`, attached to a running vehicle.
+*  CAN is a broadcast bus, so every controller sees every frame.
+*  A frame carries an 11-bit identifier and up to 8 bytes of data, and the identifier says what the frame means.
+*  One controller is broadcasting the flag as ascii text.
+*  You need to find that frame.
 
-과제:
-*  `candump`로 버스에 흐르는 frame을 확인하세요.
+Task:
+*  Listen to the frames on the bus.
 
 ```
 candump vcan0
 ```
 
-*  출력 형식을 확인하세요. 인터페이스, ID, payload 길이, payload 순서입니다.
+*  Read the output format: interface, identifier, payload length, then the bytes.
 
 ```
 vcan0  0C0   [8]  0B 54 00 00 27 10 00 00
 ```
 
-*  `-a`를 붙여 payload를 ascii로도 출력하세요.
+*  Add `-a` to render each payload as ascii alongside the hex.
 
 ```
 candump -a vcan0
 ```
 
-*  ascii 열에 사람이 읽을 수 있는 텍스트가 나타나는 ID를 찾으세요.
+*  Find the identifier whose ascii column shows readable text.
 
-힌트:
-*  ascii 열이 점(`.`)으로 채워진 줄은 넘기세요. 대부분은 센서 값입니다.
-*  2초에 한 번만 전송되니 잠시 지켜보세요.
-*  한 줄만 읽고 끝내지 마세요. 플래그는 8바이트씩 잘려 같은 ID로 연달아 나갑니다.
+Hints:
+*  Skip the lines whose ascii column is all dots. Those are sensor values.
+*  Watch for a while. The controller only transmits every two seconds.
+*  Do not stop at one line. The flag goes out eight bytes at a time, on the same identifier, back to back.
 
-ascii 열에 이어지는 텍스트가 플래그입니다!
+The text running down the ascii column is the flag!

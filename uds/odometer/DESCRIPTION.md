@@ -1,33 +1,33 @@
-# 여러 컨트롤러에 나뉜 주행거리 한꺼번에 고치기 (WriteDataByIdentifier)
+# Correcting an Odometer Recorded in Several Controllers (WriteDataByIdentifier)
 
-이 단계의 목표는 다음과 같습니다:
-*  주행거리 조작(odometer rollback)은 가장 흔한 차량 범죄이면서, 동시에 하나의 진단 작업입니다.
-*  service `0x2E` **WriteDataByIdentifier**는 이미 아는 `0x22`의 반대편입니다. DID 공간도 session 규칙도 같고, 쓰기는 기본 session에서 해 주지 않습니다.
+The goal of this stage is as follows:
+*  Odometer rollback is the most common vehicle crime there is, and it is also a single diagnostic operation.
+*  Service `0x2E`, **WriteDataByIdentifier**, is the other half of the `0x22` you already know. Same identifier space, same session rules, and writing is not served in the default session.
 
 ```
-2E F1 A2 00 03 46 F0      DID 0xF1A2 에 214,768 기록
+2E F1 A2 00 03 46 F0      write 214,768 to DID 0xF1A2
 ```
 
-*  계기판은 `0x7E0`에 있고, `0xF1A2`를 읽으면 이 차가 달린 거리가 나옵니다.
-*  다만 이제는 계기판만 기억하지 않습니다. 주행거리는 한 곳만 고쳐도 들키도록 여러 컨트롤러에 기록됩니다.
-*  계기판은 `0xF1A3`으로 plausibility 판정을 내놓는데, 이때 자기 메모리를 읽는 것이 아니라 **다른 기록과 비교**합니다.
-*  모든 기록이 **4만 킬로미터 미만의 같은 숫자**를 가리키게 만들어야 합니다.
+*  The cluster is at `0x7E0`, and `0xF1A2` reads back the distance this car has travelled.
+*  Except the cluster is no longer the only thing that remembers. The odometer is recorded across several controllers precisely so that changing one is detectable.
+*  The cluster publishes a plausibility verdict on `0xF1A3`, and it produces that by **comparing against the other records**, not by reading its own memory.
+*  You need every record to read the **same number, below forty thousand kilometres**.
 
-과제:
-*  주행거리를 기억하는 컨트롤러를 모두 찾으세요. 앞에서 익힌 열거 방법 그대로입니다.
-*  확장 session에 들어가세요.
+Task:
+*  Find every controller that remembers the odometer. Same enumeration you learned earlier.
+*  Enter an extended session.
 
 ```
 10 03
 ```
 
-*  찾은 컨트롤러 전부에 같은 값을 쓰세요.
-*  `0xF1A3`을 읽어 판정을 확인하세요.
+*  Write the same value to all of them.
+*  Read `0xF1A3` to check the verdict.
 
-힌트:
-*  `0xF1A3` 판정을 읽어 가며 하나씩 맞추세요. 값이 서로 다르면 그렇다고 알려 줍니다.
-*  두 조건을 모두 만족시키세요. 값이 일치해도 충분히 낮지 않으면 통과하지 못합니다.
-*  쓰기 전에 각 컨트롤러의 현재 값을 `0x22`로 읽어 두세요. 무엇을 맞춰야 하는지 분명해집니다.
-*  기본 session에서 쓰려고 하지 마세요. 거부됩니다.
+Hints:
+*  Work one controller at a time, reading the `0xF1A3` verdict as you go. It tells you when the values disagree.
+*  Satisfy both conditions. Agreement alone is not enough if the value is not low enough.
+*  Read each controller's current value with `0x22` before you write, so you know what you are reconciling.
+*  Do not try to write from the default session. It is refused.
 
-모든 기록이 일치하고 값이 충분히 낮으면 plausibility 응답에 플래그가 담겨 옵니다!
+Get every record to agree on a low enough value and the plausibility response carries the flag!

@@ -1,32 +1,32 @@
-# 순서를 세는 interlock 통과하기 (Interlock)
+# Getting Through an Interlock That Counts (Interlock)
 
-이 단계의 목표는 다음과 같습니다:
-*  앞의 금고는 한 번 쓰는 것으로 열렸지만, 중요한 것은 보통 그렇게 두지 않습니다.
-*  이것은 이모빌라이저입니다. **정해진 순서대로 여러 번** 써야 하고, 몇 번째까지 왔는지 세고 있습니다.
-*  단계를 틀리면 무시하지 않고 **처음으로 되돌립니다.** 틀린 단계를 봐주면 각 자리를 따로 대입할 수 있게 되기 때문입니다.
-*  상태 characteristic이 지금 몇 번째 단계인지 알려 줍니다.
-*  순서를 끝까지 진행해야 합니다.
+The goal of this stage is as follows:
+*  The vault before this opened on a single write. Things that matter are not usually left that way.
+*  This is an immobiliser. It takes **several writes in a fixed order** and keeps count of how far you have got.
+*  A wrong step is not ignored: it **sends you back to the start**. Tolerating a wrong step would let you brute force each position separately.
+*  A status characteristic tells you which step you are on.
+*  You need to walk the sequence to the end.
 
-과제:
-*  attribute table에서 정비 지침 발췌를 찾아 읽으세요. 단계가 적혀 있습니다.
-
-```
-gatttool -b <주소> --char-desc
-```
-
-*  현재 상태를 읽어 시작점을 확인하세요.
-*  지침이 말하는 값을 순서대로 쓰세요.
+Task:
+*  Find the service procedure extract in the attribute table and read it. The steps are in there.
 
 ```
-gatttool -b <주소> --char-write-req -a <handle> -n <값>
+gatttool -b <address> --char-desc
 ```
 
-*  **쓸 때마다 상태를 읽으세요.** 단계가 올라갔는지 확인하고 다음으로 넘어가야 합니다.
-*  상태가 처음으로 돌아갔으면 처음부터 다시 하세요.
+*  Read the status to see where you are starting.
+*  Write the values the procedure names, in order.
 
-힌트:
-*  찍어 맞히지 마세요. 쓰고, 관찰하고, 인정됐는지 확인받는 방식입니다.
-*  상태를 확인하지 않고 연달아 쓰지 마세요. 어디서 어긋났는지 알 수 없습니다.
-*  실패를 두려워하지 마세요. 불이익 없이 처음부터 다시 하면 됩니다.
+```
+gatttool -b <address> --char-write-req -a <handle> -n <value>
+```
 
-끝까지 도달하면 상태 characteristic이 플래그를 내놓습니다!
+*  **Read the status after every write.** Confirm the step advanced before you send the next one.
+*  If the status has gone back to the start, start over.
+
+Hints:
+*  Do not guess. This is write, observe, and be told you were accepted.
+*  Do not write several in a row without checking. You will not know where it went wrong.
+*  Do not worry about failing. There is no penalty; just start again.
+
+Reach the end and the status characteristic hands you the flag!

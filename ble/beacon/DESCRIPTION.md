@@ -1,34 +1,34 @@
-# 연결하지 않고 advertising만으로 읽어내기 (Beacon)
+# Reading a Device Without Connecting to It (Beacon)
 
-이 단계의 목표는 다음과 같습니다:
-*  지금까지의 peripheral은 모두 연결해서 다뤘지만, 이번에는 연결하지 않아도 됩니다.
-*  찾아지고 싶은 장치는 **advertising**을 합니다. payload를 특정 상대 없이 계속 broadcast하고, 연결도 핸드셰이크도 없습니다.
-*  advertising payload는 **AD 구조**의 나열입니다. 각각 길이 바이트, 타입 바이트, 데이터로 이루어집니다.
+The goal of this stage is as follows:
+*  Every peripheral so far you connected to. This one you do not have to.
+*  A device that wants to be found **advertises**: it broadcasts a payload at nobody in particular, with no connection and no handshake.
+*  An advertising payload is a sequence of **AD structures**, each a length byte, a type byte, and data.
 
 ```
-02 01 06        길이 2, 타입 0x01 (Flags), 값 06
-14 ff 99 04 ..  길이 20, 타입 0xFF (Manufacturer Specific Data)
+02 01 06        length 2, type 0x01 (Flags), value 06
+14 ff 99 04 ..  length 20, type 0xFF (Manufacturer Specific Data)
 ```
 
-*  타입 `0xFF`는 회사 식별자 2바이트 뒤에 제조사가 원하는 것을 담는 자리입니다.
-*  **advertising payload는 모든 구조를 합쳐 31바이트**입니다. 이 센서가 할 말은 거기에 들어가지 않아서, 조각을 하나씩 돌려가며 broadcast합니다. 조각마다 앞에 위치가 붙습니다.
-*  조각을 모두 모아 순서대로 맞춰야 합니다.
+*  Type `0xFF` is two bytes of company identifier followed by whatever the manufacturer wants.
+*  **The whole payload, every structure together, is 31 bytes.** What this sensor has to say does not fit, so it rotates through fragments, each prefixed with its position.
+*  You need to collect them all and put them in order.
 
-과제:
-*  advertising payload를 그대로 관찰하세요.
+Task:
+*  Watch the advertising payload directly.
 
 ```
 hcidump --passive
 ```
 
-*  타입 `0xFF` 구조를 찾아 회사 식별자 2바이트 뒤부터 읽으세요.
-*  조각을 모두 볼 때까지 지켜보세요.
-*  위치 바이트로 정렬하고, 그 바이트를 떼고 이어 붙이세요.
+*  Find the type `0xFF` structure and read from after the two company identifier bytes.
+*  Watch until you have seen every fragment.
+*  Sort by the position byte, strip it, and join.
 
-힌트:
-*  `-n`을 붙이세요. 여러 번 보고해 줍니다.
-*  이름으로 찾으려 하지 마세요. 이 장치는 이름을 advertising하지 않아 `hcitool lescan`에 `(unknown)`으로 나옵니다.
-*  한 바퀴를 다 볼 때까지 기다리세요. 조각 하나를 빠뜨리면 중간이 비어 보입니다.
-*  `gatttool`은 여기서 쓰지 마세요. 연결할 필요가 없습니다.
+Hints:
+*  Add `-n` to have it report repeatedly.
+*  Do not look for it by name. This device does not advertise one, so `hcitool lescan` shows it as `(unknown)`.
+*  Wait for a full round. Miss a fragment and there is a hole in the middle.
+*  Do not reach for `gatttool`. There is nothing to connect to.
 
-조각을 순서대로 합치면 플래그가 됩니다!
+Join the fragments in order and you have the flag!

@@ -1,32 +1,32 @@
-# CAN ID filter로 원하는 frame만 골라내기 (Filtering)
+# Selecting Frames With an Identifier Filter (Filtering)
 
-이 단계의 목표는 다음과 같습니다:
-*  이번 버스에는 40개 가까운 ID가 동시에 흐릅니다.
-*  컨트롤러 하나가 특정 ID로만 플래그를 흘리고 있습니다.
-*  플래그는 7바이트씩 잘려 나가고, 각 조각 앞에 위치를 알려 주는 1바이트가 붙습니다.
-*  조각은 순서가 뒤섞여 도착하고, 한 바퀴를 돈 뒤 약 4초 쉬었다가 다시 시작합니다.
-*  filter로 그 ID만 골라내 조각을 모으고, 순서를 되돌려야 합니다.
+The goal of this stage is as follows:
+*  This bus carries close to forty identifiers at once.
+*  One controller leaks the flag on a single identifier.
+*  The flag goes out seven bytes at a time, each fragment prefixed with one byte saying where it belongs.
+*  The fragments arrive out of order, and after a full round the controller pauses about four seconds before starting again.
+*  You need to filter down to that identifier, collect the fragments and put them back in order.
 
-과제:
-*  `-a`로 버스를 관찰해 ascii 텍스트가 보이는 ID를 찾으세요.
+Task:
+*  Watch the bus with `-a` and find the identifier showing ascii text.
 
 ```
 candump -a vcan0
 ```
 
-*  그 ID만 남도록 filter를 거세요. `candump`는 인터페이스 뒤에 `ID:MASK` 형식으로 filter를 받습니다.
+*  Filter down to it. `candump` takes filters after the interface, as `ID:MASK`.
 
 ```
-candump -a vcan0,<찾은ID>:7FF
+candump -a vcan0,<the identifier you found>:7FF
 ```
 
-*  조각을 전부 볼 때까지 지켜보세요.
-*  각 payload의 첫 바이트로 정렬한 다음, 그 바이트를 떼고 나머지를 이어 붙이세요.
+*  Watch until you have seen every fragment.
+*  Sort by the first byte of each payload, then strip that byte and join the rest.
 
-힌트:
-*  mask는 `7FF`를 쓰세요. `received_id & MASK == ID & MASK`인 frame만 남습니다.
-*  범위로 걸려면 mask를 느슨하게 주세요. `candump vcan0,100:700`은 `0x100`부터 `0x1FF`까지입니다.
-*  수상한 ID를 찾을 때는 캡처를 ID로 정렬해 보세요. `candump vcan0 | awk`도 좋습니다.
-*  중간이 비어 보이면 한 바퀴를 다 보지 못한 것입니다. 조각 번호가 연속인지 확인하세요.
+Hints:
+*  Set the mask to `7FF`. It keeps only frames where `received_id & MASK == ID & MASK`.
+*  Loosen the mask to catch a range. `candump vcan0,100:700` is `0x100` through `0x1FF`.
+*  Sort a capture by identifier to spot the odd one out. `candump vcan0 | awk` is enough.
+*  Check that the fragment numbers are contiguous. A gap means you have not seen a full round yet.
 
-조각을 위치대로 이어 붙이면 플래그가 됩니다!
+Join the fragments in index order and you have the flag!
