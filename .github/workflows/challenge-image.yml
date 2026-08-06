@@ -11,6 +11,9 @@ on:
   push:
     paths:
       - image/**
+      # the notes next to the Dockerfile do not go into the image, and
+      # rebuilding to republish an identical one helps nobody
+      - '!image/**.md'
       - .github/workflows/challenge-image.yml
   workflow_dispatch:
 

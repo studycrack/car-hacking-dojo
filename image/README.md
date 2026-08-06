@@ -31,25 +31,40 @@ byte is a frame the reader asked for.
 
 ## Building and publishing
 
+This is automatic. `.github/workflows/challenge-image.yml` builds and pushes to
+this repository's own registry whenever anything under `image/` changes, using
+the token GitHub hands the job. There are no secrets to configure.
+
+Changing the image means editing **two** files, and forgetting the second is
+the easy mistake:
+
+```
+image/…                                 whatever actually changed
+.github/workflows/challenge-image.yml   the tag it publishes
+dojo.yml                                the tag the dojo pulls
+```
+
+Bump the tag rather than moving one. The platform pulls onto every workspace
+node independently, so a moved tag leaves nodes disagreeing about what they are
+running, and `latest` guarantees it.
+
+Push, wait for the workflow to finish, and only then update the dojo. The
+previous tag stays in the registry and keeps serving until you do, so there is
+no window where challenges cannot start.
+
 The image must be **public**: the platform's pull worker authenticates with
-pwn.college's own registry credentials, so it cannot see a private image of
-yours.
+pwn.college's own registry credentials, so it cannot see a private image. The
+package starts out private, so make it public once, under the repository's
+Packages page.
+
+Building by hand is only needed if you are pointing the dojo at a registry of
+your own:
 
 ```bash
 cd image
 docker build -t <account>/challenge-can:v1 .
 docker push <account>/challenge-can:v1
 ```
-
-Then point the dojo at it, once, at the top level of `dojo.yml`:
-
-```yaml
-image: <account>/challenge-can:v1
-```
-
-Use a real tag rather than `latest`; the platform pulls onto every workspace
-node independently, and a moved tag leaves nodes disagreeing about what they
-are running.
 
 ## Opting a challenge in
 
