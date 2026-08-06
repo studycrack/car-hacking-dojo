@@ -26,10 +26,17 @@ candump -a vcan0 > /tmp/capture.txt &
 grep -a pwn /tmp/capture.txt
 ```
 
+*  That is only the first eight bytes. Take its identifier and read every frame on it.
+
+```
+grep -a ' <that identifier> ' /tmp/capture.txt
+```
+
 Hints:
 *  Get the order right. Capturing after the press leaves you an empty capture, and nothing reports an error.
 *  Just do it again if you get it wrong. There is no limit on presses.
 *  Stop a backgrounded capture with `kill %1`.
+*  Do not stop at the first match. The transmission is eight bytes per frame, back to back on one identifier.
 *  Remember this ordering. Every challenge after this one assumes it.
 
-The ascii text left in your capture is the flag!
+Join the ascii across those frames and you have the flag!

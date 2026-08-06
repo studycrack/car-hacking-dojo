@@ -28,7 +28,11 @@ def main():
                         help="send no scan request, so no scan response comes back")
     parser.add_argument("-n", "--count", type=int, default=1,
                         help="report this many times (advertising is a repeating broadcast)")
-    parser.add_argument("-w", "--wait", type=float, default=1.0,
+    # a rotating advertiser changes payload every Server.rotation_period (0.4s),
+    # so sampling slower than that aliases: at one report a second the index
+    # advances 2.5 slots each time and a five-fragment rotation only ever shows
+    # its even slots, leaving the rest unreachable however long you watch
+    parser.add_argument("-w", "--wait", type=float, default=0.1,
                         help="seconds between reports")
     arguments = parser.parse_args()
 
