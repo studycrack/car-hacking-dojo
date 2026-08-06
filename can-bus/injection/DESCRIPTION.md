@@ -22,7 +22,7 @@ candump vcan0,19A:7FF
 *  그 값으로 `0x19B` frame을 만들어 보내세요. `cansend`는 `candump`와 같은 표기를 씁니다.
 
 ```
-cansend vcan0 19B#0200ABCD
+cansend vcan0 19B#02FFABCD
 ```
 
 *  바이트를 다음과 같이 채우세요.
