@@ -36,6 +36,7 @@ import asyncio
 import os
 import sys
 import threading
+import traceback
 import time
 
 sys.path.insert(0, "/challenge")
@@ -479,6 +480,7 @@ class Shim:
         self.notifiers = {}
         self.pumps = {}
         self.locks = {}
+        self.announced = set()
         self.discovery = None
 
     async def run(self):
@@ -491,6 +493,8 @@ class Shim:
         await self.bus.wait_for_disconnect()
 
     def start_discovery(self):
+        # each scan starts over: everything visible is reported again
+        self.announced.clear()
         if self.discovery is None or self.discovery.done():
             self.discovery = asyncio.create_task(self._discovery_loop())
 
@@ -511,6 +515,10 @@ class Shim:
                 await asyncio.sleep(0.3)
         except asyncio.CancelledError:
             pass
+        except Exception:
+            # an exception here would otherwise die with the task and leave
+            # scanning quietly returning nothing at all
+            traceback.print_exc()
 
     async def discover(self):
         """Publish a Device1 for everything currently advertising."""
@@ -522,15 +530,19 @@ class Shim:
             path = device_path(address)
             name = ble.local_name(structures)
             if path in self.devices:
-                # report a device already on the bus only when what it is
-                # broadcasting has actually changed. Announcing every pass
-                # would be a fresh sighting every 0.3s, which buries a console
-                # like bluetoothctl under updates that say nothing new
+                # Report a device already on the bus once per scan, and again
+                # whenever what it broadcasts changes. Reporting it on every
+                # pass would be a fresh sighting every 0.3s, which buries a
+                # console like bluetoothctl; reporting it only on change would
+                # leave a second scan silent about a device that never varies,
+                # and a scan has to say what is out there.
                 device = self.devices[path]
                 before = (dict(device._manufacturer), dict(device._service_data))
                 device.absorb(structures)
-                if before == (device._manufacturer, device._service_data):
+                changed = before != (device._manufacturer, device._service_data)
+                if not changed and path in self.announced:
                     continue
+                self.announced.add(path)
                 self.manager.refresh(path, device)
                 device.emit_properties_changed({
                     "RSSI": -55,
@@ -538,6 +550,7 @@ class Shim:
                     "ServiceData": device._service_data,
                 })
                 continue
+            self.announced.add(path)
             device = Device(self, address, name, structures)
             self.devices[path] = device
             self.manager.add(self.bus, path, device)
