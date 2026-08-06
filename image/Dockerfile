@@ -27,12 +27,13 @@ RUN apt-get update \
         python3 \
         python3-pip \
         xxd \
+        bettercap \
  && rm -rf /var/lib/apt/lists/*
 
 # cantools pulls python-can in with it. Installing the distribution's
 # python-can as well leaves pip trying to replace a package it did not install,
 # which it refuses to do.
-RUN pip3 install --no-cache-dir --break-system-packages cantools \
+RUN pip3 install --no-cache-dir --break-system-packages cantools bleak \
  && apt-get purge -y python3-pip \
  && apt-get autoremove -y
 

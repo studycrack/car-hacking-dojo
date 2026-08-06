@@ -77,6 +77,26 @@ repository, and it is those that set `LD_PRELOAD` and exec the real binary.
 `/opt/can-wrappers/` in the image does the same thing and is there for use
 inside the container, but nothing in the repository may point at it.
 
+## bleak and bettercap
+
+Both are installed, and neither can reach this dojo's peripherals.
+
+The Bluetooth here is emulated in userspace: a peripheral is a unix socket
+under `/run/bluetooth`, and `shared/tools/{hcitool,gatttool,hcidump}` speak to
+it directly. `bleak` goes through BlueZ over D-Bus and `bettercap`'s BLE
+modules open an HCI socket, so both want a controller the container does not
+have --- the same missing `CAP_NET_ADMIN` that made `canshim.c` necessary on
+the CAN side, plus no Bluetooth hardware to give it.
+
+There is no shim for this. Making `bleak` work would mean standing up a fake
+`org.bluez` on the system bus and exposing the emulated peripherals through
+it, which is a much larger piece of work than intercepting a handful of
+socket calls.
+
+So they are here as the real tools, for reference and for anyone pointing a
+workspace at actual hardware. Every BLE challenge is solved with the shipped
+tools or with `ble.py`, and nothing in the dojo asks for either of these.
+
 ## What the image does not solve
 
 `isotpsend`, `isotprecv` and `isotpdump` use `CAN_ISOTP`, a separate kernel
