@@ -23,10 +23,4 @@ Task:
 31 01 C0 01
 ```
 
-Hints:
-*  Read the list carefully. Three are ordinary diagnostic addresses; one is in a range you would never have thought to sweep.
-*  Do not expect the routing table to be defensible. It was written once during development and copied forward every model year, and it is almost never audited.
-*  Apply the same eight-above rule for response addresses on the far side.
-*  Do not go looking for authentication. The immobiliser runs `0xC001` for anything that can reach it.
-
 Run the routine and its response carries the flag!

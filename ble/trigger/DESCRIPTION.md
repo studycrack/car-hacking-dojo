@@ -25,9 +25,4 @@ for handle, value in client.events_stream(timeout=5):
     print(hex(handle), value)
 ```
 
-Hints:
-*  Do not invert the order. This is the same story as the fob that transmitted once back in the CAN module.
-*  Do not run `gatttool` twice. That gives you two connections and the answer goes to the wrong one.
-*  The client in `/challenge/ble.py` does both on one connection. If you prefer `bleak`, run it with `/usr/bin/python3`.
-
 The answer that arrives as a notification is the flag!

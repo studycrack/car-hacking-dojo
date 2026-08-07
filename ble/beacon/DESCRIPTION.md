@@ -25,10 +25,4 @@ hcidump --passive
 *  Watch until you have seen every fragment.
 *  Sort by the position byte, strip it, and join.
 
-Hints:
-*  Add `-n` to have it report repeatedly.
-*  Do not look for it by name. This device does not advertise one, so `hcitool lescan` shows it as `(unknown)`.
-*  Wait for a full round. Miss a fragment and there is a hole in the middle.
-*  Do not reach for `gatttool`. There is nothing to connect to.
-
 Join the fragments in order and you have the flag!

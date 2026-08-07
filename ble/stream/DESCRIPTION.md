@@ -24,9 +24,4 @@ chunks = [value for handle, value in client.events_stream(timeout=5)]
 *  Sort what you collected by that first byte.
 *  **Strip the position byte before you join.**
 
-Hints:
-*  Do not join in arrival order. The protocol does not care what came first.
-*  Do not leave the position byte in. It shows up as stray characters between fragments.
-*  Check the fragment numbers are contiguous. A gap means you have not received them all.
-
 Join the fragments in order and you have the flag!

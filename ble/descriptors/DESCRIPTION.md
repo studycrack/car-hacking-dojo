@@ -24,9 +24,4 @@ gatttool -b <address> --char-desc
 gatttool -b <address> --char-read -a <descriptor handle>
 ```
 
-Hints:
-*  Compare the line counts of the two listings. `--char-desc` is far longer, and the difference is the whole challenge.
-*  Tell them apart by UUID: `0x2803` is a declaration, `0x2901` is a User Description.
-*  If a value comes back as hex, render it as ascii.
-
 One of the descriptors holds the flag!

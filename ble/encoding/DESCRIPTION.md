@@ -26,10 +26,4 @@ echo -n 'cHduLmNv...' | base64 -d
 
 *  Read the descriptors for the ordering, then join.
 
-Hints:
-*  Do not try to break anything. Neither half has a key, and both transformations are public.
-*  Judge by shape. Recognising them on sight is the whole skill here.
-*  Do not stop at the values. The order of the two halves is written in the descriptors.
-*  If the result is not shaped like a flag, swap the order.
-
 Join the two halves in order and you have the flag!

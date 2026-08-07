@@ -34,14 +34,4 @@ cansend vcan0 7E0#0322F19000000000
    *  The two bytes after it are block size and minimum separation.
 *  Read DID `0xF1AB` from the same controller. It is the bootloader unlock token.
 
-Hints:
-*  Join the fragments to read it. The response is `62 F1 90` followed by seventeen bytes.
-*  Send flow control as soon as the transfer stalls. The ECU waits thirty seconds for it.
-*  If the ECU has gone quiet, wait a moment and ask again. It does not answer anything else while it is waiting.
-*  If doing it by hand is tedious, use `isotpreq`, which handles segmentation and flow control for you.
-
-```
-isotpreq vcan0 7E0 7E8 22F190
-```
-
 The response to `0xF1AB` carries the flag!

@@ -34,10 +34,4 @@ client.write_long(<handle>, b"...36 bytes...")
 
 *  Once service mode is open, read that characteristic.
 
-Hints:
-*  Do not spend time hunting for the command. It is not a secret; getting it **in** is the challenge.
-*  Get every offset right. A wrong one reassembles into a different value and service mode does not open.
-*  Size each piece at the MTU minus the header.
-*  Use `client.write_long`, which does the splitting and the Execute for you.
-
 Open service mode, then read that characteristic for the flag!

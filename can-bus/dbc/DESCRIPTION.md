@@ -27,15 +27,4 @@ data = message.encode({...})
 
 *  Transmit the encoded eight bytes on the `BCM_Command` identifier.
 
-Hints:
-*  Run it with `/usr/bin/python3`. There are two interpreters on this machine and `cantools` is installed in the challenge image one.
-
-```
-/usr/bin/python3 -c 'import cantools; print(cantools.__version__)'
-```
-
-*  Start your script with `#!/usr/bin/python3`.
-*  Fill in every signal name `cantools dump` lists. `message.encode` requires the ones you do not care about too.
-*  Do not pack the bits by hand. Motorola ordering is easy to get wrong. Let the library do it.
-
 Get the command accepted and the flag goes out on the bus. Watch for it with `candump -a vcan0`!

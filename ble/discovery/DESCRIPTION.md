@@ -27,10 +27,4 @@ gatttool -b <address> --characteristics
 gatttool -b <address> --char-read -a <value handle>
 ```
 
-Hints:
-*  Separate the **declaration handle** from the **value handle** in the `--characteristics` output. They are different attributes.
-*  Read the value handle. Reading a declaration gives you property information and no data.
-*  Take the number in the `char value handle` column.
-*  If you prefer a shell, `bluetoothctl` works the same way: `scan on`, then `connect`, then its `gatt` menu.
-
 One of the values you read is the flag!

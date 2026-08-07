@@ -24,9 +24,4 @@ gatttool -b <address> --char-write-req -a <handle> -n <value>
 *  **Read the status after every write.** Confirm the step advanced before you send the next one.
 *  If the status has gone back to the start, start over.
 
-Hints:
-*  Do not guess. This is write, observe, and be told you were accepted.
-*  Do not write several in a row without checking. You will not know where it went wrong.
-*  Do not worry about failing. There is no penalty; just start again.
-
 Reach the end and the status characteristic hands you the flag!

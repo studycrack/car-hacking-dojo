@@ -27,9 +27,4 @@ gatttool -b <address> --char-desc
 gatttool -b <address> --char-write-req -a <cccd handle> -n 0100 --listen
 ```
 
-Hints:
-*  Do not treat the declaration's property byte as a permission. It is **what the firmware says it intends**, and the stack does not enforce it.
-*  Just write the CCCD. Nothing checks the properties when a write arrives.
-*  Do not go back to reading the characteristic value. It still says `debug channel idle`. The CCCD is the thing to touch.
-
 Turn the subscription on and the flag arrives as a notification!

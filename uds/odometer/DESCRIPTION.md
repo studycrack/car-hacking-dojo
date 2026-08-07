@@ -24,10 +24,4 @@ Task:
 *  Write the same value to all of them.
 *  Read `0xF1A3` to check the verdict.
 
-Hints:
-*  Work one controller at a time, reading the `0xF1A3` verdict as you go. It tells you when the values disagree.
-*  Satisfy both conditions. Agreement alone is not enough if the value is not low enough.
-*  Read each controller's current value with `0x22` before you write, so you know what you are reconciling.
-*  Do not try to write from the default session. It is refused.
-
 Get every record to agree on a low enough value and the plausibility response carries the flag!

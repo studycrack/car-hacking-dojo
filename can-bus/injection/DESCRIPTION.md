@@ -30,9 +30,4 @@ cansend vcan0 19B#02FFABCD
    *  Bytes 2-3 take the session counter you just read, in place of `ABCD` above.
 *  Confirm that byte 0 of `0x19A` goes from `01` to `00`.
 
-Hints:
-*  Read it and send immediately. The counter rotates every thirty seconds.
-*  Keep a `candump` running in a second terminal so you see the counter and the result at once.
-*  If byte 0 stays `01`, read the counter again and resend. Yours was stale.
-
 Unlock the doors and the flag goes out on the bus. Watch for it with `candump -a vcan0`!

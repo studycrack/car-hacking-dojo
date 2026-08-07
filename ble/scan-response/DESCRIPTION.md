@@ -25,9 +25,4 @@ hcidump
 *  Compare the two outputs to see what appeared. What appeared is the scan response.
 *  Join the fragments from both halves in position order.
 
-Hints:
-*  Follow the fragment numbers across both. The scan response numbers carry on from the advertising.
-*  Do not stop at passive. The numbering runs out halfway.
-*  Add `-n` to have it report repeatedly.
-
 Put the two halves together and you have the flag!

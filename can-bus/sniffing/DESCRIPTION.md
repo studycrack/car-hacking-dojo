@@ -28,9 +28,4 @@ candump -a vcan0
 
 *  Find the identifier whose ascii column shows readable text.
 
-Hints:
-*  Skip the lines whose ascii column is all dots. Those are sensor values.
-*  Watch for a while. The controller only transmits every two seconds.
-*  Do not stop at one line. The flag goes out eight bytes at a time, on the same identifier, back to back.
-
 The text running down the ascii column is the flag!

@@ -25,10 +25,4 @@ for handle, value in client.events_stream(timeout=5):
 
 *  Join the records in order.
 
-Hints:
-*  Match the CCCD value to what the characteristic actually does. Subscribing for notifications on something that only indicates achieves nothing.
-*  Do not just listen. Without a confirmation you get exactly one record and wait forever for the rest.
-*  Use the client in `/challenge/ble.py`, which sends the confirmations for you. Its `subscribe` writes the notification value unless you ask for the other one.
-*  If you want `bleak`, run it with `/usr/bin/python3`.
-
 Collect the whole log and you have the flag!

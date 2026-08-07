@@ -32,10 +32,4 @@ bus = vcan.Bus("vcan0")
 bus.send(0x123, bytes([0x11, 0x22]))
 ```
 
-Hints:
-*  Do not assume there is only one identifier tracking the needle. One is what the cluster **listens to**, the other is what the cluster **reports**.
-*  **Do not judge by the display.** It draws whatever the status frame says, so injecting on the status frame puts 133 on the screen without the cluster having believed anything.
-*  Tell them apart by what travels alongside. The status frame carries engine RPM next to the speed, and a wheel speed sensor has no way to know the engine's state.
-*  Do not loop `cansend` in the shell. It will not outpace the real sensor. Drive the bus from python instead.
-
 Get the cluster to believe 133 and the flag goes out on the bus. Watch for it with `candump -a vcan0`!

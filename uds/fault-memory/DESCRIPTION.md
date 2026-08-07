@@ -26,10 +26,4 @@ Task:
 
 *  Run the release routine immediately after.
 
-Hints:
-*  **Get the order right.** Finish the sweep, then clear, then run.
-*  Do not clear while you are still hunting for the routine. The rest of the sweep just fills the memory again.
-*  Read `19 02 FF` as you go, so you can see how you look right now.
-*  After clearing, send only requests that leave no DTC behind.
-
 Run the release routine and its response carries the flag!

@@ -25,10 +25,4 @@ Task:
    *  `36` sends the blocks in numbered order.
    *  `37` finishes with the checksum.
 
-Hints:
-*  Compute the checksum by summing the bytes, taking the two's complement and truncating to one byte. It is what bootloaders have always done.
-*  Split to the largest block `RequestDownload` said it would take. Exceed it and you are refused.
-*  If you get `requestSequenceError`, start the block numbers again from `01`.
-*  Keep the original you read and change only those four bytes before writing it back.
-
 Once the write commits the controller reports the result, and the flag is in it!

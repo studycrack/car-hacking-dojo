@@ -29,10 +29,4 @@ gatttool -b <address> --char-write-req -a <cccd handle> -n 0100 --listen
 
 *  Collect the notifications and join them in order.
 
-Hints:
-*  Do not leave off `--listen`. Without it you write and disconnect, and receive nothing.
-*  Do not stop after the first one. The peripheral speaks when it is ready.
-*  Write the CCCD value little endian: `0x0001` goes on the wire as `0100`.
-*  Find the descriptor the way you did in `descriptors`.
-
 Join the notifications and you have the flag!

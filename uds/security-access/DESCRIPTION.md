@@ -33,10 +33,4 @@ print(isotp.request(bus, 0x7E0, 0x7E8, bytes.fromhex("1003")).hex())
 31 01 F0 0D
 ```
 
-Hints:
-*  Ask for a diagnostic session as often as you like. It is what a tester does constantly, so it is never refused.
-*  Look at how this ECU treats a new session. No failure count and no lockout survive it.
-*  Take the seed once and keep using it. It survives as long as you do not fall back to the default session.
-*  Do not fetch a fresh seed per attempt. The target keeps moving and the search never finishes.
-
 The response to the routine carries the flag!

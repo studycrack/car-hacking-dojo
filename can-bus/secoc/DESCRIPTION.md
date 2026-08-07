@@ -29,10 +29,4 @@ candump vcan0,1B0:7FF
    *  Watch what the MAC does when the freshness differs.
 *  Use what you found to build an unlock command, send it, and read the result off `0x1B1`.
 
-Hints:
-*  Do not attack the cryptography. Without the key you cannot compute a MAC.
-*  Find what the MAC does not cover instead. A field left out of the computation can be changed freely and still verify.
-*  Read byte 2 carefully. `02` means the MAC was wrong; `03` means the freshness was. They are different problems.
-*  Pick a freshness ahead of what byte 1 reports, but do not reach too far ahead.
-
 Unlock the doors and the flag goes out on the bus. Watch for it with `candump -a vcan0`!

@@ -25,17 +25,4 @@ gatttool -b <address> --char-read -a 0x0001
    *  Anything else means there is.
 *  Find the handle that answered but was not in the listing, and read it.
 
-Hints:
-*  Write a loop. Handles are small integers and there are not many of them.
-
-```
-for h in $(seq 1 60); do
-  printf '%04x ' $h
-  gatttool -b <address> --char-read -a $h
-done
-```
-
-*  If that is slow, use the client in `/challenge/ble.py`, which opens the connection once and walks the whole range.
-*  Put the two listings side by side. Without comparing them you cannot tell what was hidden.
-
 The attribute that was hiding holds the flag!

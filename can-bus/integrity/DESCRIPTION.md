@@ -26,10 +26,4 @@ candump vcan0,1F5:7FF &
    *  byte 0: `01` accepted / `10` checksum wrong / `11` counter wrong
    *  byte 1: how many consecutive frames carrying the watched value have been accepted
 
-Hints:
-*  Work from the verdict byte one field at a time. It tells you which check you failed.
-*  Watch it with `cansniffer -c vcan0`, which colours whichever bytes are moving.
-*  Do not just replay the sample. Change the value and the protection fields have to change with it.
-*  If byte 1 climbs and then drops to `0`, look at byte 0 at that moment. One frame in the middle was rejected.
-
 Get eight in a row accepted and the flag goes out on the bus. Watch for it with `candump -a vcan0`!

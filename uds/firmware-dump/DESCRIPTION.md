@@ -25,11 +25,4 @@ Task:
 *  Loop until you have the whole image.
 *  Search the image for the service that is in no specification, and for the value it demands, then call it.
 
-Hints:
-*  Do not guess addresses. A 32-bit space is far too large. Ask the controller instead.
-*  Use `requestOutOfRange` to find the edges. Anything outside a mapped region returns it.
-*  If you are refused, check your session first. `0x23` is not served to just anyone.
-*  Cortex-M puts flash at a known place. Use the part name as the hint for which.
-*  Once you have the dump, run `strings` or `xxd` over it, or read it in python.
-
 Call the hidden service correctly and its response carries the flag!

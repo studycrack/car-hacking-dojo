@@ -25,9 +25,4 @@ hcidump --passive
 *  Read from **after the two UUID bytes**.
 *  Collect the fragments, sort by the position byte, strip it, and join.
 
-Hints:
-*  Do not treat the whole structure as data. Every fragment picks up two bytes of UUID in front, which leaves you something that looks almost right and is not, which is harder to notice than being completely wrong.
-*  If the same two characters keep appearing at regular intervals, you did not strip the UUID. Move the offset along by two.
-*  Check the type first and then apply its layout. AD structures are typed, and each type lays its bytes out its own way.
-
 Strip the UUID, join in order, and you have the flag!

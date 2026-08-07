@@ -25,10 +25,4 @@ Task:
 31 01 C0 01
 ```
 
-Hints:
-*  Stack ISO-TP and UDS on top unchanged. The protocols have no idea that what is underneath them stopped being a wire.
-*  Subscribe before you send. The response comes back the same way.
-*  Do not go looking for authentication. The immobiliser runs `0xC001` for anything that reaches it.
-*  Use the client in `/challenge/ble.py`, which subscribes and writes on one connection.
-
 The routine's response comes back as a notification, and the flag is in it!

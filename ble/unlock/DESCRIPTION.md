@@ -29,10 +29,4 @@ gatttool -b <address> --char-desc
 *  Write the value the note names.
 *  Read the vault characteristic again and confirm it no longer says `locked`.
 
-Hints:
-*  Use `-req`. A Write Request gets a response, so you learn whether it worked.
-*  Do not use `--char-write-cmd`. A Write Command is fire and forget and stays quiet when it fails.
-*  Read the error you get back. It names the permission you violated.
-*  Give the value as hex. If it is an ascii string, convert it first.
-
 Open the vault, then read that characteristic for the flag!
