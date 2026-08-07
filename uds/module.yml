@@ -5,8 +5,8 @@ resources:
     name: The Protocol Behind the OBD-II Port
     expandable: false
     content: |
-      Raw CAN frames are how a car talks to itself. **UDS** --- Unified
-      Diagnostic Services, ISO 14229 --- is how a car talks to a technician,
+      Raw CAN frames are how a car talks to itself. **UDS** — Unified
+      Diagnostic Services, ISO 14229 — is how a car talks to a technician,
       and it is a far more powerful interface: read fault memory, run actuator
       tests, read and write memory, reflash a controller.
 
