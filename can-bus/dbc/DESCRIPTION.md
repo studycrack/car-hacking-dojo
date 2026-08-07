@@ -15,6 +15,12 @@ cantools dump /challenge/vehicle.dbc
 ```
 
 *  Work out the signal names and bit positions of `BCM_Command`.
+*  Run your script with `/usr/bin/python3`. There are two interpreters here and `cantools` is installed in the challenge image one, which plain `python3` does not have.
+
+```
+/usr/bin/python3 -c 'import cantools; print(cantools.__version__)'
+```
+
 *  Encode the values with `cantools`, which does the bit packing for you.
 
 ```
