@@ -22,7 +22,17 @@ Task:
    *  Ask for identification record `0xF18C` to get the part name.
    *  The part name tells you its memory layout.
 *  Find the largest read the controller will serve. Ask for more and it refuses.
-*  Loop until you have the whole image.
+*  Loop until you have the whole image, scripting it with `isotp.py` and `vcan.py` from `/challenge`.
+
+```
+#!/usr/bin/python3
+import sys
+sys.path.insert(0, "/challenge")
+import isotp, vcan
+
+bus = vcan.Bus("vcan0")
+response = isotp.request(bus, 0x7E0, 0x7E8, bytes.fromhex("22F190"), timeout=0.2)
+```
 *  Search the image for the service that is in no specification, and for the value it demands, then call it.
 
 Call the hidden service correctly and its response carries the flag!

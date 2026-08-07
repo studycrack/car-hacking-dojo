@@ -15,7 +15,17 @@ ls -l /run/vcan/
 
 Task:
 *  Find the gateway on the diagnostic bus. It answers like any other controller, so enumerate it the way you already know.
-*  Sweep its identification records and read the routing table.
+*  Sweep its identification records and read the routing table. Script the sweep with `isotp.py` and `vcan.py` from `/challenge`.
+
+```
+#!/usr/bin/python3
+import sys
+sys.path.insert(0, "/challenge")
+import isotp, vcan
+
+bus = vcan.Bus("vcan0")
+response = isotp.request(bus, 0x7E0, 0x7E8, bytes.fromhex("22F190"), timeout=0.2)
+```
 *  Pick the entry in the forwarded list that does not look like a diagnostic address.
 *  Send a UDS request to the immobiliser on that identifier and run the routine.
 

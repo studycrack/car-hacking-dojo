@@ -14,7 +14,14 @@ Task:
 gatttool -b <address> --char-desc
 ```
 
-*  Read handles directly, starting at `0x0001` and counting up.
+*  Read handles directly, starting at `0x0001` and counting up. Put it in a loop; handles are small integers and there are not many of them.
+
+```
+for h in $(seq 1 60); do
+  printf '%04x ' $h
+  gatttool -b <address> --char-read -a $h
+done
+```
 
 ```
 gatttool -b <address> --char-read -a 0x0001

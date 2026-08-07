@@ -8,7 +8,17 @@ The goal of this stage is as follows:
 *  You need to clear the fault memory your sweep created, then run the release routine.
 
 Task:
-*  Find the release routine's identifier. Sweep with `31 01 <id>`; the identifier that answers anything other than `requestOutOfRange` is the one.
+*  Find the release routine's identifier. Sweep with `31 01 <id>`; the identifier that answers anything other than `requestOutOfRange` is the one. That is more requests than anyone types, so script it with `isotp.py` and `vcan.py` from `/challenge`.
+
+```
+#!/usr/bin/python3
+import sys
+sys.path.insert(0, "/challenge")
+import isotp, vcan
+
+bus = vcan.Bus("vcan0")
+response = isotp.request(bus, 0x7E0, 0x7E8, bytes.fromhex("22F190"), timeout=0.2)
+```
 *  Look at the trail you have left.
 
 ```
