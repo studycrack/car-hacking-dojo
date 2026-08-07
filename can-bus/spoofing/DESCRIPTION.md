@@ -22,6 +22,7 @@ cansniffer -c vcan0
 *  It keeps one line per identifier and colours the bytes that change. Quit with `q`.
 *  Compare the byte pair against the displayed value to recover the encoding. It is not plain km/h.
 *  Transmit 133 km/h, in that encoding, on the identifier the cluster *listens to*, continuously for three seconds.
+*  Do not take the display as proof. It draws whatever the status frame says, so injecting there puts 133 on the screen without the cluster having believed anything.
 
 ```
 import sys

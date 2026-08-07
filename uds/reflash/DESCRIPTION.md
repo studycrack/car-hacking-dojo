@@ -8,7 +8,7 @@ The goal of this stage is as follows:
 | --- | --- |
 | `34 <fmt> <ALFI> <address> <size>` | RequestDownload, declaring where and how much |
 | `36 <n> <data...>` | TransferData, one block. `n` counts `01, 02, 03, ...` |
-| `37 <checksum>` | RequestTransferExit, finishing and proving the bytes arrived intact |
+| `37 <checksum>` | RequestTransferExit, finishing and proving the bytes arrived intact. The checksum is every byte summed, two's complemented, truncated to one |
 
 *  `RequestDownload` answers `74`, a length format byte, and the largest block it will accept.
 *  `TransferData` must carry the **next** block number. Repeat one or skip one and you get `requestSequenceError`.
