@@ -30,4 +30,4 @@ cansend vcan0 19B#02FFABCD
    *  Bytes 2-3 take the session counter you just read, in place of `ABCD` above.
 *  Confirm that byte 0 of `0x19A` goes from `01` to `00`.
 
-Unlock the doors and the flag goes out on the bus. Watch for it with `candump -a vcan0`!
+Unlock the doors and the flag goes out on the bus — on its own identifier, not the one you filtered for, so watch all of it with `candump -a vcan0`!

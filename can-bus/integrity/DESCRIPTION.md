@@ -39,4 +39,4 @@ bus.send(0x1F5, payload)              # what you put on it
    *  byte 0: `01` accepted / `10` checksum wrong / `11` counter wrong
    *  byte 1: how many consecutive frames carrying the watched value have been accepted
 
-Get eight in a row accepted and the flag goes out on the bus. Watch for it with `candump -a vcan0`!
+Get eight in a row accepted and the flag goes out on the bus — on its own identifier, not the one you filtered for, so watch all of it with `candump -a vcan0`!

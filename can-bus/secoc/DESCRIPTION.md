@@ -29,4 +29,4 @@ candump vcan0,1B0:7FF
    *  Watch what the MAC does when the freshness differs.
 *  Use what you found to build an unlock command, send it, and read the result off `0x1B1`.
 
-Unlock the doors and the flag goes out on the bus. Watch for it with `candump -a vcan0`!
+Unlock the doors and the flag goes out on the bus — on its own identifier, not the one you filtered for, so watch all of it with `candump -a vcan0`!
