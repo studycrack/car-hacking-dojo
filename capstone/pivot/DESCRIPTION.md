@@ -12,7 +12,7 @@ Task:
    *  one characteristic that **writes** frames
    *  one that pushes the frames it hears as **notifications**
 *  **Subscribe to the notifications first**, for the same reason as in `trigger`.
-*  Write frames on the same connection, in the notation you have been reading all along.
+*  Write frames on the same connection, in the notation you have been reading all along. `gatttool` cannot hold a subscription and write at the same time, so use the client in `/challenge/ble.py`, as in `trigger`.
 
 ```
 6F2#0322F19000000000

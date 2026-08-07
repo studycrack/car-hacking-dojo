@@ -21,16 +21,26 @@ cantools dump /challenge/vehicle.dbc
 /usr/bin/python3 -c 'import cantools; print(cantools.__version__)'
 ```
 
-*  Encode the values with `cantools`, which does the bit packing for you.
+*  Encode the values with `cantools`, which does the bit packing for you, and put the frame on the bus with `vcan.py` from `/challenge`.
 
 ```
 #!/usr/bin/python3
-import cantools
+import sys
+sys.path.insert(0, "/challenge")
+import cantools, vcan
+
 db = cantools.database.load_file("/challenge/vehicle.dbc")
 message = db.get_message_by_name("BCM_Command")
 data = message.encode({...})
+vcan.Bus("vcan0").send(message.frame_id, data)
 ```
 
-*  Transmit the encoded eight bytes on the `BCM_Command` identifier.
+*  Or print the encoded bytes and send them with `cansend`, which takes the same notation `candump` prints.
+
+```
+cansend vcan0 <BCM_Command id>#<the eight bytes>
+```
+
+*  Do not reach for `python-can`. It is installed, but its socketcan interface wants a kernel network device and this bus is a unix socket, so it fails with `No such device`.
 
 Get the command accepted and the flag goes out on the bus. Watch for it with `candump -a vcan0`!
