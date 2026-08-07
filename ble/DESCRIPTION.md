@@ -1,2 +1,2 @@
-The car's wireless surface, from the outside: finding what advertises, walking
-a GATT table, and getting peripherals to hand over what they should not.
+Find what advertises, walk a GATT table, and take what a peripheral hands to
+anyone who asks.
