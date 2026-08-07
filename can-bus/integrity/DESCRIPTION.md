@@ -21,7 +21,20 @@ candump vcan0,1F5:7FF &
    *  One increments regularly, transmission to transmission.
    *  The other changes whenever the earlier bytes change.
 *  Recover how each field is computed.
-*  Send eight consecutive frames carrying `0x0BB8`, with both fields correct.
+*  Send eight consecutive frames carrying `0x0BB8`, with both fields correct. Each one needs its own counter and checksum, so drive the bus from python with `vcan.py` from `/challenge`.
+
+```
+#!/usr/bin/python3
+import sys
+sys.path.insert(0, "/challenge")
+import vcan
+
+bus = vcan.Bus("vcan0")
+for can_id, data in bus.frames():     # what the bus is carrying
+    ...
+bus.send(0x1F5, payload)              # what you put on it
+```
+
 *  Read the verdict off `0x1F6`.
    *  byte 0: `01` accepted / `10` checksum wrong / `11` counter wrong
    *  byte 1: how many consecutive frames carrying the watched value have been accepted
