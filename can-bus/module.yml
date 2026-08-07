@@ -8,7 +8,7 @@ resources:
       **CAN** is a two-wire broadcast bus. A frame carries an 11-bit
       *identifier* and up to 8 bytes of data, and that is very nearly the whole
       protocol. The identifier does not say who sent the frame or who should
-      receive it — it says what the frame *means*, and every controller on the
+      receive it. It says what the frame *means*, and every controller on the
       bus decides for itself whether it cares.
 
       There is no source address to check, so there is nothing to authenticate

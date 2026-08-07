@@ -100,8 +100,8 @@ it directly. `bleak` does not know any of that exists.
 
 `bleak` is made to work by `shared/bluez.py`, which every BLE challenge's
 `.init` starts alongside a private `dbus-daemon` (`/opt/dbus.conf`). The shim
-owns the name `org.bluez` and presents the object tree BlueZ presents --- an
-adapter, a device per peripheral, a GATT tree per connection --- implementing
+owns the name `org.bluez` and presents the object tree BlueZ presents (an
+adapter, a device per peripheral, a GATT tree per connection), implementing
 each method against `ble.Client` underneath. `bleak` cannot tell the
 difference: scanning, connecting, reads (including the Read Blob continuation
 for long values), descriptors, notifications and Prepare/Execute long writes
@@ -114,7 +114,7 @@ that name.
 
 `bluetoothctl` gets the same benefit for free, because it is a D-Bus client
 too: `scan on`, `connect`, and the `gatt` menu all work against the shim. It
-prints one `Unable to open mgmt_socket` line on startup --- that socket is for
+prints one `Unable to open mgmt_socket` line on startup, because that socket is for
 adapter configuration, and nothing below it needs one.
 
 `bluetoothctl` is the only part of the `bluez` package that survives; the
@@ -125,7 +125,7 @@ exist here, and the first two would shadow or be shadowed by the emulations in
 current tools rather than legacy ones, but they want those same HCI and
 management sockets, and nothing here needs them: no challenge mentions either,
 and the packet view `btmon` would give is what the `hcidump` emulation already
-provides. `bluetoothd` goes too --- it would contend for the `org.bluez` name
+provides. `bluetoothd` goes too, because it would contend for the `org.bluez` name
 the shim owns, and its D-Bus activation file would let something start it by
 accident.
 

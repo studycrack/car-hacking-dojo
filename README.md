@@ -50,7 +50,7 @@ built to stop you. The module headers carry the same bands.
 Roughly **eighteen hours** of hands-on time for a student comfortable with Linux
 and Python; budget half again as long for one who is not. The modules are
 independent of each other, but within a module the challenges assume the
-earlier ones — `rolling-code` expects the capture discipline `fob-capture`
+earlier ones. `rolling-code` expects the capture discipline `fob-capture`
 teaches, `integrity` expects the signal reverse engineering from `spoofing`,
 and `gateway` and `firmware-dump` both expect the enumeration from
 `ecu-discovery`.
@@ -59,12 +59,12 @@ and `gateway` and `firmware-dump` both expect the enumeration from
 
 Workspace containers run under `runc` with only `SYS_PTRACE` (see
 `dojo_plugin/api/v1/docker.py`), so a challenge cannot `ip link add dev vcan0
-type vcan` — that needs `CAP_NET_ADMIN`, which is only granted to
+type vcan`, because that needs `CAP_NET_ADMIN`, which is only granted to
 `privileged` challenges in dojos holding the `workspace_net_admin` permission.
 
 So `shared/vcan.py` emulates the bus instead. A hub process, started as root by
 each challenge's `.init`, listens on a unix socket at `/run/vcan/vcan0` and
-broadcasts every frame it receives to every *other* attached client — which is
+broadcasts every frame it receives to every *other* attached client, which is
 what a CAN transceiver sees on a real bus, including the absence of loopback to
 the sender.
 
@@ -99,7 +99,7 @@ Advertising is real too: `Advertisement` builds AD structures -- length, type,
 data -- and refuses a payload over the thirty-one bytes the air allows, which
 is why anything larger than that goes out as a rotating sequence of payloads
 the way a real beacon does. A scan reads the advertisement, and reads the scan
-response only when it is active — and that distinction is enforced rather
+response only when it is active, and that distinction is enforced rather
 than declared: the advertisement is written where any process can read it,
 because it is broadcast, while the scan response is only ever produced as an
 answer to a request sent to the peripheral. A passive scan never touches it.
@@ -134,12 +134,12 @@ The DOJO resolves symlinks when it copies a challenge into a container
 contents, so there is exactly one copy of the bus implementation in the repo.
 Symlinks must stay inside the dojo root. A symlinked directory is copied with
 its contents, because the symlink branch of `resolved_tar` calls `tar.add`
-without `recursive=False` — unlike the branch for ordinary files, which
+without `recursive=False`, unlike the branch for ordinary files, which
 passes it.
 
 Every file placed in `/challenge` is made `root:root 4755` by the DOJO, so
-anything a student should not read — the ECU firmware, and `isotp.py` in the
-challenge whose objective is to implement ISO-TP — is `chmod 600`'d by `.init`.
+anything a student should not read (the ECU firmware, and `isotp.py` in the
+challenge whose objective is to implement ISO-TP) is `chmod 600`'d by `.init`.
 Since `.init` runs as root, the ECU still starts fine.
 
 ## Adding a challenge
@@ -156,6 +156,6 @@ response payload.
 
 Challenges are ordinary DOJO challenges; load the dojo and use the standard
 test flow (`./deploy.sh -t` in the DOJO repo). The bus, the tools, and each
-challenge's win condition can also be exercised outside a container — run the
+challenge's win condition can also be exercised outside a container. Run the
 hub and an `ecu` as root with `/run/vcan` writable and a `/flag` in place, then
 talk to the socket with the tools in `shared/tools/`.
