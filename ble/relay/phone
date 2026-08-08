@@ -1,0 +1,41 @@
+#!/run/dojo/bin/python3 -u
+"""The owner's phone, holding the key, wherever the owner happens to be.
+
+It answers a challenge for anyone who asks, because that is what passive entry
+requires of it: the phone cannot see how far away the car is, and it has no way
+to know whether the thing that asked is the car or something standing between
+them. NCC Group's relay used exactly that, and so does this challenge.
+"""
+import hashlib
+import sys
+import threading
+
+sys.path.insert(0, "/challenge")
+import ble
+
+PHONE_ADDRESS = "6c:2f:0a:d1:38:b4"
+
+SHARED_KEY = bytes.fromhex("53f0c1a97b2e46d8")
+
+phone = ble.Server(PHONE_ADDRESS, "OwnerPhone")
+phone.add_service(0xFF10)
+
+state = {"response": b"\x00" * 8}
+lock = threading.Lock()
+
+
+def on_challenge(value, connection):
+    if len(value) != 8:
+        return ble.ERR_INVALID_ATTRIBUTE_LENGTH
+    with lock:
+        state["response"] = hashlib.sha256(SHARED_KEY + bytes(value)).digest()[:8]
+        answer.value = state["response"]
+    return None
+
+
+phone.add_characteristic(0xFF11, b"", ble.PROP_WRITE, on_write=on_challenge)
+phone.add_descriptor(ble.UUID_USER_DESCRIPTION, b"challenge in (8 bytes)")
+answer = phone.add_characteristic(0xFF12, b"\x00" * 8, ble.PROP_READ)
+phone.add_descriptor(ble.UUID_USER_DESCRIPTION, b"response out")
+
+phone.run()

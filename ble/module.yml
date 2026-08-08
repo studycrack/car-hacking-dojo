@@ -143,6 +143,10 @@ resources:
     type: challenge
     name: Enrolling a Key of Your Own
 
+  - id: relay
+    type: challenge
+    name: Relaying a Proximity Check
+
   - id: long-write
     type: challenge
     name: Writing More Than Fits

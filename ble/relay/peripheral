@@ -1,0 +1,97 @@
+#!/run/dojo/bin/python3 -u
+"""A car that checks how quickly the phone answers, and a phone out of its range.
+
+NCC Group published this against Tesla in May 2022. Passive entry asks the
+phone to prove it is nearby, and the proof offered is a challenge answered
+quickly: a phone across the street would take too long. Sultan Qasim Khan's
+relay worked at the link layer and forwarded a response inside a single
+connection event, adding about 8 ms when the connection interval was 30 ms or
+more. That is inside the ordinary variation of a BLE device answering, so the
+car cannot tell the difference. The phone was twenty five metres away and up a
+floor, and the car unlocked.
+
+Here the car and the phone are two peripherals, and the car cannot reach the
+phone. Only you can reach both. The deadline is generous enough for a relay
+that keeps its links open and short enough that three separate shell commands
+will not make it, which is the same distinction the paper draws.
+"""
+import hashlib
+import os
+import sys
+import threading
+import time
+
+sys.path.insert(0, "/challenge")
+import ble
+
+CAR_ADDRESS = "d4:9a:20:6b:77:0e"
+
+# what the car allows between issuing a challenge and being answered. A relay
+# holding both connections open answers in well under a millisecond; a round
+# trip through a fresh process per step does not.
+DEADLINE = 0.080
+
+SHARED_KEY = bytes.fromhex("53f0c1a97b2e46d8")
+
+flag = open("/flag").read().strip()
+
+
+def response_for(nonce):
+    return hashlib.sha256(SHARED_KEY + nonce).digest()[:8]
+
+
+car = ble.Server(CAR_ADDRESS, "PassiveEntry-Car")
+car.add_service(0xFF00)
+
+state = {"nonce": b"\x00" * 8, "issued": 0.0}
+lock = threading.Lock()
+
+
+def issue_challenge():
+    """Every read is a fresh challenge, and starts the clock."""
+    with lock:
+        state["nonce"] = os.urandom(8)
+        state["issued"] = time.time()
+        return state["nonce"]
+
+
+def on_response(value, connection):
+    if len(value) != 8:
+        return ble.ERR_INVALID_ATTRIBUTE_LENGTH
+    with lock:
+        elapsed = time.time() - state["issued"]
+        correct = bytes(value) == response_for(state["nonce"])
+        if not correct:
+            verdict.value = b"wrong response"
+        elif elapsed > DEADLINE:
+            verdict.value = b"too slow: %d ms" % int(elapsed * 1000)
+        else:
+            verdict.value = b"in range: %d ms" % int(elapsed * 1000)
+            cabin.value = flag.encode()
+    return None
+
+
+challenge = car.add_characteristic(0xFF01, b"\x00" * 8, ble.PROP_READ)
+car.add_descriptor(ble.UUID_USER_DESCRIPTION, b"challenge (read for a fresh one)")
+car.add_characteristic(0xFF02, b"", ble.PROP_WRITE, on_write=on_response)
+car.add_descriptor(ble.UUID_USER_DESCRIPTION, b"response (8 bytes)")
+verdict = car.add_characteristic(0xFF03, b"idle", ble.PROP_READ)
+car.add_descriptor(ble.UUID_USER_DESCRIPTION, b"last attempt")
+cabin = car.add_characteristic(0xFF04, b"locked", ble.PROP_READ)
+car.add_descriptor(ble.UUID_USER_DESCRIPTION, b"cabin")
+
+# the challenge attribute is rebuilt on every read rather than held, so that a
+# response can never be prepared before the challenge that it answers
+original_find = car.find
+
+
+def find(handle):
+    attribute = original_find(handle)
+    if attribute is challenge:
+        attribute.value = issue_challenge()
+    return attribute
+
+
+car.find = find
+
+car.run()

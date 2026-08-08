@@ -41,6 +41,7 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `service-data` | AD structures are typed, and the type says where the data starts | 20m |
 | | `hidden-handles` | a discovery response is a list the firmware chose to send; the handles work anyway | 25m |
 | | `enrolment` | catching the seconds after a key card is presented, when the car enrols a new key without asking who is writing | 40m |
+| | `relay` | forwarding a passive entry challenge to a phone the car cannot reach, inside the deadline meant to prove proximity | 40m |
 | | `long-write` | Prepare and Execute Write, for a value one request cannot carry | 25m |
 | Capstone | `pivot` | reaching an unreachable bus through the BLE dongle bridged onto it | 60m |
 
