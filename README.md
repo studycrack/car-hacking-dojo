@@ -15,7 +15,6 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `resync` | replaying a captured run to resynchronise a rolling code receiver backwards, then unlocking with a code it had passed | 45m |
 | | `spoofing` | reverse engineering a signal's identifier, offset, and scale, then out-transmitting the real sensor | 50m |
 | | `dbc` | reading a DBC file and letting cantools do the Motorola bit packing | 30m |
-| | `fingerprint` | separating two senders on one identifier by the period each one's clock keeps | 45m |
 | | `integrity` | recovering an alive counter and checksum from captured traffic to forge frames a validating module accepts | 55m |
 | | `secoc` | forging an authenticated frame without the key, by changing a field the MAC was never computed over | 60m |
 | Diagnostics and UDS | `iso-tp` | segmentation and flow control, by hand | 45m |
@@ -41,6 +40,7 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `scan-response` | the second payload a peripheral only sends when asked, and what asking costs | 25m |
 | | `service-data` | AD structures are typed, and the type says where the data starts | 20m |
 | | `hidden-handles` | a discovery response is a list the firmware chose to send; the handles work anyway | 25m |
+| | `enrolment` | catching the seconds after a key card is presented, when the car enrols a new key without asking who is writing | 40m |
 | | `long-write` | Prepare and Execute Write, for a value one request cannot carry | 25m |
 | Capstone | `pivot` | reaching an unreachable bus through the BLE dongle bridged onto it | 60m |
 

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+chmod 700 /challenge/peripheral
+
+touch /run/challenge.log
+chmod 600 /run/challenge.log
+
+/run/dojo/bin/setsid /challenge/peripheral </dev/null >>/run/challenge.log 2>&1 &
+mkdir -p /run/dbus
+/usr/bin/dbus-daemon --config-file=/opt/dbus.conf --nofork </dev/null >>/run/challenge.log 2>&1 &
+/run/dojo/bin/setsid /challenge/bluez.py </dev/null >>/run/challenge.log 2>&1 &

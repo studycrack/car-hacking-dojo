@@ -139,6 +139,10 @@ resources:
     type: challenge
     name: Walking the Handles
 
+  - id: enrolment
+    type: challenge
+    name: Enrolling a Key of Your Own
+
   - id: long-write
     type: challenge
     name: Writing More Than Fits

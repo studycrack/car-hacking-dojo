@@ -1,0 +1,121 @@
+#!/run/dojo/bin/python3 -u
+"""A key enrolment that stops asking who you are for a while after a card tap.
+
+Martin Herfurt showed this against Tesla vehicles in June 2022. Tesla had made
+the key card more convenient: tap it once and the car stays willing for a
+couple of minutes rather than making you tap again to drive. The authorisation
+granted in that window turned out to be too general -- it also covered
+enrolling an entirely new key, with no further authentication and nothing on
+the display to say a key had been added. Anyone in Bluetooth range while the
+owner used their card could leave themselves a key.
+
+The window here is shorter than the 130 seconds Herfurt measured, and the
+owner uses the card on their own schedule, so the work is to be watching and
+ready when it opens rather than to make it open.
+"""
+import random
+import sys
+import threading
+import time
+
+sys.path.insert(0, "/challenge")
+import ble
+
+ADDRESS = "b8:27:eb:4a:11:d0"
+
+# ATT "Insufficient Authorization". shared/ble.py does not name this one, and
+# it is the honest answer to a write that would have been allowed a moment ago.
+ERR_INSUFFICIENT_AUTHORIZATION = 0x08
+
+# how long the car stays willing after the card, and how long the owner is
+# away between uses. The window cannot be provoked: it has to be caught.
+WINDOW_SECONDS = 14
+AWAY_SECONDS = (30, 50)
+
+OWNER_KEY = bytes.fromhex("9f2c41a05e83d7b6")
+
+flag = open("/flag").read().strip()
+
+server = ble.Server(ADDRESS, "VCSEC-BodyController")
+server.add_service(0xFF00)
+
+state = {"open_until": 0.0, "enrolled": None}
+lock = threading.Lock()
+
+
+def announce(value):
+    """Push the new state to whoever subscribed, and leave it readable too.
+
+    A notification carries at most MTU-3 bytes, so these stay short enough to
+    arrive whole rather than being cut where nobody would notice.
+    """
+    assert len(value) <= ble.DEFAULT_MTU - 3
+    status.value = value
+    for (connection, handle), setting in list(server.subscriptions.items()):
+        if handle == status.handle and setting:
+            try:
+                server.notify(connection, status.handle, value)
+            except OSError:
+                pass
+
+
+def on_enrol(value, connection):
+    """Take a key, or refuse -- unless the card has just been used.
+
+    Nothing here asks who is writing. The card tap is treated as having
+    authorised whatever comes next, which is the whole of the finding.
+    """
+    if len(value) != 8:
+        return ble.ERR_INVALID_ATTRIBUTE_LENGTH
+    with lock:
+        if time.time() >= state["open_until"]:
+            return ERR_INSUFFICIENT_AUTHORIZATION
+        state["enrolled"] = bytes(value)
+    announce(b"key enrolled")
+    return None
+
+
+def on_present(value, connection):
+    """Unlock with an enrolled key. The owner's works, and so does anything
+    that got itself added."""
+    with lock:
+        added = state["enrolled"]
+        if added and bytes(value) == added and added != OWNER_KEY:
+            vault.value = flag.encode()
+        elif bytes(value) == OWNER_KEY:
+            vault.value = b"unlocked"
+        else:
+            vault.value = b"locked: key not recognised"
+    return None
+
+
+server.add_characteristic(0xFF01, b"", ble.PROP_WRITE, on_write=on_enrol)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"enrol key (8 bytes)")
+
+status = server.add_characteristic(0xFF02, b"idle", ble.PROP_READ | ble.PROP_NOTIFY)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"enrolment state")
+server.add_cccd(status.handle)
+
+server.add_characteristic(0xFF03, b"", ble.PROP_WRITE, on_write=on_present)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"present key (8 bytes)")
+
+vault = server.add_characteristic(0xFF04, b"locked", ble.PROP_READ)
+server.add_descriptor(ble.UUID_USER_DESCRIPTION, b"cabin")
+
+
+def owner():
+    """The owner comes back, taps the card, and goes. Not on your schedule."""
+    while True:
+        time.sleep(random.uniform(*AWAY_SECONDS))
+        with lock:
+            state["open_until"] = time.time() + WINDOW_SECONDS
+        announce(b"card presented")
+        time.sleep(WINDOW_SECONDS)
+        with lock:
+            closed = time.time() >= state["open_until"]
+        if closed:
+            announce(b"idle")
+
+
+threading.Thread(target=owner, daemon=True).start()
+server.run()
