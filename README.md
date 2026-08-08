@@ -11,6 +11,7 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `filtering` | identifier filters, payload structure | 20m |
 | | `fob-capture` | capturing a one-shot transmission: attach the capture before triggering the event | 15m |
 | | `injection` | forging frames with `cansend` against a live controller | 25m |
+| | `contention` | out-transmitting the controller that reports the opposite, and holding the majority long enough to be believed | 20m |
 | | `rolling-code` | replaying a rolling code the receiver never consumed | 40m |
 | | `resync` | replaying a captured run to resynchronise a rolling code receiver backwards, then unlocking with a code it had passed | 45m |
 | | `spoofing` | reverse engineering a signal's identifier, offset, and scale, then out-transmitting the real sensor | 50m |

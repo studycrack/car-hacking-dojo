@@ -1,0 +1,74 @@
+#!/run/dojo/bin/python3 -u
+"""An immobiliser that believes whichever controller says it most.
+
+Ken Tindell and Ian Tabor documented this against a Toyota RAV4 in 2023
+(CVE-2023-29389). Thieves reached the bus at the headlight connector and
+injected the frame the smart key ECU sends once it has validated the key. The
+receiving controller cannot tell which node sent a frame, so the attack is not
+to defeat the key check. It is to state the result of one yourself, and to
+keep stating it, because the controller that actually did the check is on the
+same bus saying otherwise.
+"""
+import sys
+import threading
+import time
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+KEY_STATUS_ID = 0x3D0
+IMMOBILISER_ID = 0x3D8
+FLAG_ID = 0x7C0
+
+KEY_VALIDATED = 0x01
+
+# a single frame decides nothing: the immobiliser goes by the recent majority
+# of what it has heard, so out-talking the smart key ECU has to be sustained
+WINDOW = 20
+MAJORITY = 11
+HOLD_SECONDS = 2.0
+
+bus = vcan.Bus("vcan0")
+
+# the hub does not echo a frame back to the client that sent it, so the
+# immobiliser needs its own attachment to hear the smart key ECU at all
+listener = vcan.Bus("vcan0")
+
+flag = open("/flag").read().strip()
+
+state = threading.Lock()
+window = []
+holding_since = None
+announced = None
+authorised = False
+
+
+def report():
+    with state:
+        validated = sum(1 for value in window if value == KEY_VALIDATED)
+        held = 0 if holding_since is None else int((time.time() - holding_since) * 10)
+        return bytes([0x01 if authorised else 0x00, validated, MAJORITY,
+                      min(held, 0xFF), 0x00, 0x00, 0x00, 0x00])
+
+
+vcan.transmit_periodically(bus, KEY_STATUS_ID, bytes(8), hz=10)
+vcan.transmit_periodically(bus, IMMOBILISER_ID, report, hz=5)
+vcan.transmit_periodically(bus, 0x0C0, lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+vcan.transmit_periodically(bus, 0x3C1, lambda: bytes([0x5A, 0x00, 0x44, 0x00]), hz=2)
+
+for can_id, data in listener.frames():
+    if can_id != KEY_STATUS_ID or not data:
+        continue
+    with state:
+        window.append(data[0])
+        del window[:-WINDOW]
+        validated = sum(1 for value in window if value == KEY_VALIDATED)
+        if len(window) == WINDOW and validated >= MAJORITY:
+            if holding_since is None:
+                holding_since = time.time()
+            elif announced != holding_since and time.time() - holding_since >= HOLD_SECONDS:
+                announced = holding_since
+                authorised = True
+                bus.send_text(FLAG_ID, flag)
+        else:
+            holding_since = None

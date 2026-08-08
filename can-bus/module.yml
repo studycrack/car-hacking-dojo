@@ -40,6 +40,10 @@ resources:
     type: challenge
     name: Forging Frames
 
+  - id: contention
+    type: challenge
+    name: Out-Talking a Controller
+
   - id: rolling-code
     type: challenge
     name: Rolling Codes
