@@ -2,7 +2,7 @@
 
 The goal of this stage is as follows:
 *  The immobiliser you are after is on the powertrain bus, and you are not on it.
-*  There is no gateway routing table to abuse this time either. Try `candump vcan0` and the kernel refuses you.
+*  There is no gateway routing table to abuse this time either. Try `candump vcan0` and it stops at `bind: Permission denied`.
 *  What there is instead is a Bluetooth dongle in the OBD-II port. It is on the bus, because that is what it is for, and it is on the air, because it has an app to talk to.
 *  So it is a bridge, and a bridge can be crossed in either direction.
 *  You need to put frames on that bus through the dongle and run routine `0xC001` on the immobiliser.
