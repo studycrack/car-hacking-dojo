@@ -14,6 +14,7 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `rolling-code` | replaying a rolling code the receiver never consumed | 40m |
 | | `spoofing` | reverse engineering a signal's identifier, offset, and scale, then out-transmitting the real sensor | 50m |
 | | `dbc` | reading a DBC file and letting cantools do the Motorola bit packing | 30m |
+| | `fingerprint` | separating two senders on one identifier by the period each one's clock keeps | 45m |
 | | `integrity` | recovering an alive counter and checksum from captured traffic to forge frames a validating module accepts | 55m |
 | | `secoc` | forging an authenticated frame without the key, by changing a field the MAC was never computed over | 60m |
 | Diagnostics and UDS | `iso-tp` | segmentation and flow control, by hand | 45m |

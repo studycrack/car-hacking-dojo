@@ -1,0 +1,94 @@
+#!/run/dojo/bin/python3 -u
+"""Two senders on one identifier, told apart only by the clock behind them.
+
+Cho and Shin, "Fingerprinting Electronic Control Units for Vehicle Intrusion
+Detection" (USENIX Security 2016), observed that a periodic CAN message is
+paced by its sender's own crystal, so its period carries a fingerprint the
+payload cannot. Their CIDS uses that to spot an impostor transmitting a
+identifier that belongs to another ECU.
+
+Here the impostor is already on the bus and the reader has to do what CIDS
+does. The two payloads are the same shape and both carry a plausible speed, so
+nothing in a frame separates them: the only signal is when they arrive. The
+genuine sensor holds the period its datasheet gives; the impostor keeps its
+own, and reporting that period is the objective.
+"""
+import random
+import struct
+import sys
+import threading
+import time
+
+sys.path.insert(0, "/challenge")
+import vcan
+
+WHEEL_SPEED_ID = 0x1C4
+REPORT_ID = 0x1C5
+FLAG_ID = 0x7C0
+
+# the sensor holds the period its datasheet specifies; the impostor is a
+# separate part with its own crystal, off by a few percent, which is what
+# something bolted on after the fact looks like
+GENUINE_PERIOD = 0.050
+IMPOSTOR_PERIOD = 0.0471
+
+# real senders do not tick on an ideal clock: the task that queues the frame
+# competes with everything else the part is doing, which smears each arrival by
+# a fraction of a millisecond. This is what forces the period to be measured
+# over a long baseline rather than read off a handful of arrivals.
+JITTER = 0.0016
+
+# how close the reported period has to be. Tight enough that a few seconds of
+# capture will not reach it through the jitter, wide enough that a patient
+# measurement lands comfortably.
+TOLERANCE_US = 40
+
+bus = vcan.Bus("vcan0")
+genuine = vcan.Bus("vcan0")
+impostor = vcan.Bus("vcan0")
+flag = open("/flag").read().strip()
+
+state = threading.Lock()
+speed = 40.0
+
+
+def frame():
+    """What both senders put on the wire: a speed, and nothing else."""
+    global speed
+    with state:
+        speed = max(5.0, min(95.0, speed + random.uniform(-1.2, 1.2)))
+        raw = int(speed * 100)
+    return bytes([0x00, 0x00, raw >> 8, raw & 0xFF, 0x00, 0x00, 0x00, 0x00])
+
+
+def sender(sock, period):
+    """Transmit on a fixed period, correcting for the time the work took.
+
+    Sleeping for the period would let the send cost accumulate and smear the
+    very thing this challenge is about.
+    """
+    following = time.time()
+    while True:
+        sock.send(WHEEL_SPEED_ID, frame())
+        following += period
+        delay = following + random.uniform(-JITTER, JITTER) - time.time()
+        if delay > 0:
+            time.sleep(delay)
+        else:
+            following = time.time()
+
+
+threading.Thread(target=sender, args=(genuine, GENUINE_PERIOD), daemon=True).start()
+threading.Thread(target=sender, args=(impostor, IMPOSTOR_PERIOD), daemon=True).start()
+vcan.transmit_periodically(bus, 0x0C0,
+                           lambda: bytes([0x03, 0x20, 0, 0, 0x27, 0x10, 0, 0]), hz=10)
+
+# A reader reports a period by putting it on REPORT_ID as microseconds, four
+# bytes big endian. Reporting the sensor's own period is not an answer: it is
+# printed on the datasheet, and finding it proves nothing.
+for can_id, data in bus.frames():
+    if can_id != REPORT_ID or len(data) < 4:
+        continue
+    reported = struct.unpack(">I", bytes(data[:4]))[0]
+    if abs(reported - IMPOSTOR_PERIOD * 1e6) <= TOLERANCE_US:
+        bus.send_text(FLAG_ID, flag)

@@ -56,6 +56,13 @@ resources:
     name: Reading the Database
 
   - type: header
+    content: Telling senders apart
+
+  - id: fingerprint
+    type: challenge
+    name: Fingerprinting a Sender
+
+  - type: header
     content: Defeating a checksum and a MAC
 
   - id: integrity
