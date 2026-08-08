@@ -149,6 +149,11 @@ class Hub:
                 try:
                     if key.data is None:
                         self.accept()
+                    elif key.fileobj not in self.outbox:
+                        # serving an earlier key in this same batch can drop
+                        # other clients, and their sockets are closed by the
+                        # time the batch reaches them
+                        continue
                     elif events & selectors.EVENT_READ:
                         self.read(key.fileobj)
                     elif events & selectors.EVENT_WRITE:
@@ -254,7 +259,7 @@ class Hub:
     def drop(self, client):
         try:
             self.selector.unregister(client)
-        except KeyError:
+        except (KeyError, ValueError):
             pass
         self.inbox.pop(client, None)
         self.outbox.pop(client, None)
