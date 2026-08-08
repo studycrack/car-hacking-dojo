@@ -12,6 +12,7 @@ signal reverse engineering, and the UDS diagnostic protocol.
 | | `fob-capture` | capturing a one-shot transmission: attach the capture before triggering the event | 15m |
 | | `injection` | forging frames with `cansend` against a live controller | 25m |
 | | `rolling-code` | replaying a rolling code the receiver never consumed | 40m |
+| | `resync` | replaying a captured run to resynchronise a rolling code receiver backwards, then unlocking with a code it had passed | 45m |
 | | `spoofing` | reverse engineering a signal's identifier, offset, and scale, then out-transmitting the real sensor | 50m |
 | | `dbc` | reading a DBC file and letting cantools do the Motorola bit packing | 30m |
 | | `fingerprint` | separating two senders on one identifier by the period each one's clock keeps | 45m |
