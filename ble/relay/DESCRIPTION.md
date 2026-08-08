@@ -2,8 +2,7 @@
 
 The goal of this stage is as follows:
 *  Passive entry has to know the phone is nearby, and the proof it accepts is a challenge answered quickly. A phone across the street would take too long to reach.
-*  NCC Group published this against Tesla in May 2022. Their relay forwarded the response inside a single connection event, adding about 8 ms to a connection interval of 30 ms or more.
-*  That is inside the ordinary variation of a device answering, so the car cannot tell. The phone was twenty five metres away and up a floor, and the car unlocked.
+*  A relay that forwards the response inside a single connection event adds only a few milliseconds, which is inside the ordinary variation of a device answering. The car cannot tell.
 *  Two peripherals are advertising here. The car issues a challenge and expects the answer within its deadline.
 *  The phone holds the key and answers anyone who asks. It cannot tell the car from something standing between them.
 *  **The car cannot reach the phone. You can reach both.**

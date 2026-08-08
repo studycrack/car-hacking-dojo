@@ -2,10 +2,9 @@
 
 The goal of this stage is as follows:
 *  Tapping a key card is inconvenient twice, so this car stays willing for a short while after the owner presents theirs, rather than asking again before it will drive.
-*  Martin Herfurt showed in June 2022 that on Tesla vehicles the authorisation that window granted was too general.
-*  It also covered **enrolling an entirely new key**, with no further authentication and nothing on the display to say a key had been added.
-*  Anyone in Bluetooth range while the owner used their card could leave themselves a key.
-*  This body controller does the same. Writing to its enrol characteristic is refused with ATT error `0x08`, Insufficient Authorization, except while that window is open.
+*  The authorisation that window grants is too general. It also covers **enrolling an entirely new key**, with no further authentication and nothing on the display to say a key was added.
+*  Anyone in Bluetooth range while the owner uses their card can leave themselves a key.
+*  Writing to the enrol characteristic is refused with ATT error `0x08`, Insufficient Authorization, except while that window is open.
 *  The window cannot be provoked. The owner comes and goes on their own schedule, and it stays open for a matter of seconds.
 *  Enrol a key of your own, then present it.
 
