@@ -1,9 +1,10 @@
 # Walking a Rolling Code Counter Backwards (Resynchronisation)
 
 The goal of this stage is as follows:
-*  A rolling code receiver has to tolerate a fob pressed out of range, so it keeps a window and, when it sees a run of consecutive counters, it takes that as proof the fob got ahead and **resynchronises to the run**.
+*  A rolling code receiver has to tolerate a fob pressed out of range, so it keeps a window. When it sees a run of consecutive counters it **resynchronises to the run**.
 *  The assumption underneath is that only the real fob can produce consecutive valid codes. A recording can: it holds a run of them.
-*  Kevin2600 and Wesley Li reported this in 2022 as Rolling-PWN, CVE-2021-46145, against Honda vehicles built from 2012 onward. Replaying a captured sequence drags the counter back to where it was recorded, and the codes that follow it in the recording become live again.
+*  Kevin2600 and Wesley Li reported this in 2022 as Rolling-PWN, CVE-2021-46145, against Honda vehicles built from 2012 onward.
+*  Replaying a captured sequence drags the counter back to where it was recorded, and the codes that follow it in the recording become live again.
 *  This receiver is the one you already defeated with an unconsumed code, plus that tolerance. The single spare code will not reach: the counter has moved far past your recording by the time you use it.
 *  `0x19A` reports on it.
    *  byte 0: `01` locked / `00` unlocked
