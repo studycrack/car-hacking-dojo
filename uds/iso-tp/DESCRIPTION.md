@@ -1,5 +1,3 @@
-# Carrying a Diagnostic Request Longer Than Eight Bytes (ISO-TP)
-
 The goal of this stage is as follows:
 *  A 17-character VIN does not fit in a CAN frame, so diagnostics run on top of a transport layer, **ISO-TP** (ISO 15765-2).
 *  ISO-TP spends the first byte of the payload on a control field.

@@ -1,5 +1,3 @@
-# Reassembling a Record Scattered Across Services (Fragments)
-
 The goal of this stage is as follows:
 *  This tyre pressure gateway gives every sensor its own service: four wheels and the spare, five in all.
 *  A single record is split into five fragments across those five services.

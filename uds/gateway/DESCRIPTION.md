@@ -1,5 +1,3 @@
-# Reading a Gateway's Routing Table to Reach Another Bus (Gateway)
-
 The goal of this stage is as follows:
 *  A real vehicle has several buses, deliberately kept apart, with a **central gateway** between them forwarding only what has to cross.
 *  The OBD-II connector is on the gateway's diagnostic side. It is not on the powertrain bus.

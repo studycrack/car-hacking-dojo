@@ -1,5 +1,3 @@
-# Reading a Device Without Connecting to It (Beacon)
-
 The goal of this stage is as follows:
 *  Every peripheral so far you connected to. This one you do not have to.
 *  A device that wants to be found **advertises**: it broadcasts a payload at nobody in particular, with no connection and no handshake.

@@ -1,5 +1,3 @@
-# Walking a Rolling Code Counter Backwards (Resynchronisation)
-
 The goal of this stage is as follows:
 *  A rolling code receiver has to tolerate a fob pressed out of range, so it keeps a window. When it sees a run of consecutive counters it **resynchronises to the run**.
 *  The assumption underneath is that only the real fob can produce consecutive valid codes. A recording can: it holds a run of them.

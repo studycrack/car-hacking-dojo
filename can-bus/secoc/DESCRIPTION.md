@@ -1,5 +1,3 @@
-# Forging an Authenticated Frame Without the Key (SecOC)
-
 The goal of this stage is as follows:
 *  **SecOC** attaches a **MAC**, computed with a key the sender and receiver share, to frames that matter.
 *  Every transmission carries the payload, a **freshness value** and a truncated MAC.

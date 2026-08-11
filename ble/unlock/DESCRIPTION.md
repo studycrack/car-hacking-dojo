@@ -1,5 +1,3 @@
-# Writing to a Characteristic and Reading the Permission Error (Write)
-
 The goal of this stage is as follows:
 *  Characteristics are not only for reading. Some accept writes, and a peripheral whose behaviour changes when you write to it is something to operate, not just observe.
 *  This is the Bluetooth side of a body control module.

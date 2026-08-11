@@ -1,5 +1,3 @@
-# Subscribing Before Sending the Request (Trigger)
-
 The goal of this stage is as follows:
 *  You have subscribed and you have written. This one needs both, and the **order** matters.
 *  Write to one characteristic on this keyless module and it pushes the answer as a notification on another.

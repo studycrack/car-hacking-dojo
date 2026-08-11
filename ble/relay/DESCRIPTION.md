@@ -1,5 +1,3 @@
-# Relaying a Proximity Check the Car Believes (Relay)
-
 The goal of this stage is as follows:
 *  Passive entry has to know the phone is nearby, and the proof it accepts is a challenge answered quickly. A phone across the street would take too long to reach.
 *  A relay that forwards the response inside a single connection event adds only a few milliseconds, which is inside the ordinary variation of a device answering. The car cannot tell.

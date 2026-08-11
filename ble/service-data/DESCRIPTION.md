@@ -1,5 +1,3 @@
-# Extracting the Payload From a Service Data Structure (Service Data)
-
 The goal of this stage is as follows:
 *  Manufacturer Specific Data left everything after two bytes of company identifier free. Advertising has more structured members too.
 *  **Service Data**, AD type `0x16`, says which service the data belongs to. It opens with a 16-bit service UUID, and the payload follows.

@@ -1,5 +1,3 @@
-# Picking an Unconsumed Rolling Code Out of a Burst (Replay)
-
 The goal of this stage is as follows:
 *  In a rolling code, the fob and the receiver share a secret and a counter. Each press sends the counter and a code derived from it.
 *  The receiver refuses a counter it has already accepted, and anything below it, so replaying the frame it acted on gets you nothing.

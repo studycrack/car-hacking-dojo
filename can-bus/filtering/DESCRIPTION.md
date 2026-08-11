@@ -1,5 +1,3 @@
-# Selecting Frames With an Identifier Filter (Filtering)
-
 The goal of this stage is as follows:
 *  This bus carries close to forty identifiers at once.
 *  One controller leaks the flag on a single identifier.

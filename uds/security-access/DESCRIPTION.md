@@ -1,5 +1,3 @@
-# Defeating an Attempt Limiter and Brute Forcing the Key (SecurityAccess)
-
 The goal of this stage is as follows:
 *  Reflashing, actuator tests and disarming an immobiliser all sit behind service `0x27`.
 *  **SecurityAccess** is a challenge-response exchange.

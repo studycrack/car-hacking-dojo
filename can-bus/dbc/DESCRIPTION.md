@@ -1,5 +1,3 @@
-# Building a Signal From a DBC File (DBC)
-
 The goal of this stage is as follows:
 *  A **DBC file** is how bus definitions are written down: one entry per message, one line per signal.
 *  Each signal carries a start bit, a width, a byte order, a scale and an offset.

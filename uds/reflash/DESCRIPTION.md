@@ -1,5 +1,3 @@
-# Rewriting a Calibration Block to Disarm the Immobiliser (Reflash)
-
 The goal of this stage is as follows:
 *  Reading a controller's memory is reconnaissance. Writing to it is the attack.
 *  UDS specifies the rewrite in three steps.

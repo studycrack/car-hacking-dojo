@@ -1,5 +1,3 @@
-# Finding a Handle the Discovery Response Omits (Handle Walking)
-
 The goal of this stage is as follows:
 *  Every enumeration so far asked the peripheral to describe itself, and took the answer on trust.
 *  That answer is produced by the firmware. A Read By Type response is the list the device **chose to send**, and a device can leave things out of it.

@@ -1,5 +1,3 @@
-# Enabling Notifications by Writing the CCCD (Notify)
-
 The goal of this stage is as follows:
 *  So far you asked and the peripheral answered. Sensors do not want to work that way.
 *  BLE's answer is the **notification**: a PDU the peripheral pushes without being asked.

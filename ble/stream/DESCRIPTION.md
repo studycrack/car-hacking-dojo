@@ -1,5 +1,3 @@
-# Reassembling Notifications That Arrive Out of Order (Stream)
-
 The goal of this stage is as follows:
 *  A notification carries at most twenty bytes: the ATT PDU is twenty-three and the opcode and handle take three.
 *  Anything longer arrives in fragments, and this telematics unit's trip log is longer.

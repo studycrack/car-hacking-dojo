@@ -1,5 +1,3 @@
-# Catching a Transmission That Happens Once (One-Shot Capture)
-
 The goal of this stage is as follows:
 *  CAN frames do not queue up and wait. They are on the wire for a moment and then they are gone.
 *  Whoever was listening heard it. For everyone else it did not happen.

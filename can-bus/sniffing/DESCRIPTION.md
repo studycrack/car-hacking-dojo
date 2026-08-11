@@ -1,5 +1,3 @@
-# Eavesdropping on the CAN Bus (Sniffing)
-
 The goal of this stage is as follows:
 *  Every controller sees every frame, so listening costs nothing more than attaching to the bus.
 *  One controller is broadcasting the flag as ascii text, eight bytes at a time.

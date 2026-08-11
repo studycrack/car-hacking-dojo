@@ -1,5 +1,3 @@
-# Dumping the Firmware to Find an Undocumented Service (ReadMemoryByAddress)
-
 The goal of this stage is as follows:
 *  Firmware carries every assumption the manufacturer made: services they never documented, constants they compiled in, strings a debug build left behind.
 *  UDS service `0x23`, **ReadMemoryByAddress**, is the way in. Address and length widths are not fixed; the byte after the service id declares them.

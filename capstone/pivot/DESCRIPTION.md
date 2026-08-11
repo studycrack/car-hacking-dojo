@@ -1,5 +1,3 @@
-# Using a Bluetooth Dongle as a Bridge to Another Bus (Pivot)
-
 The goal of this stage is as follows:
 *  The immobiliser you are after is on the powertrain bus, and you are not on it.
 *  There is no gateway routing table to abuse this time either. Try `candump vcan0` and it stops at `bind: Permission denied`.

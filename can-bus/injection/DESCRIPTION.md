@@ -1,5 +1,3 @@
-# Forging a Frame to Unlock the Doors (Injection)
-
 The goal of this stage is as follows:
 *  A CAN frame carries no evidence of who sent it, so anything that can reach the bus can originate any message on it.
 *  This car's body control module (BCM) speaks the following:

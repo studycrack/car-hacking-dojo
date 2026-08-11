@@ -1,5 +1,3 @@
-# Recovering an Alive Counter and Checksum to Forge a Frame (E2E)
-
 The goal of this stage is as follows:
 *  The cluster you lied to earlier believed whatever arrived. Modern modules do not.
 *  There is no room for a signature in eight bytes, so safety-relevant messages carry two small fields instead, from AUTOSAR End-to-End protection.

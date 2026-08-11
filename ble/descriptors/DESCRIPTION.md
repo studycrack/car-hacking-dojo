@@ -1,5 +1,3 @@
-# Reading a Descriptor the Characteristic List Omits (Descriptors)
-
 The goal of this stage is as follows:
 *  A characteristic is at least two attributes: a **declaration** saying what properties it has and where its value lives, and the **value** itself.
 *  **Descriptors** may sit alongside them, annotating the characteristic.

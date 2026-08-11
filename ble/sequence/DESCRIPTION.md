@@ -1,5 +1,3 @@
-# Getting Through an Interlock That Counts (Interlock)
-
 The goal of this stage is as follows:
 *  The vault before this opened on a single write. Things that matter are not usually left that way.
 *  This is an immobiliser. It takes **several writes in a fixed order** and keeps count of how far you have got.

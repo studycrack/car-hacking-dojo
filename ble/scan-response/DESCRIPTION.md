@@ -1,5 +1,3 @@
-# Asking for the Scan Response With an Active Scan (Scan Response)
-
 The goal of this stage is as follows:
 *  Thirty-one bytes is not much, so the specification offers another thirty-one, with a condition attached.
 *  Advertising goes out unasked. A **scan response** does not: the scanner has to send a scan request before the peripheral will answer with its second payload.

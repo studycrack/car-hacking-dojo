@@ -1,5 +1,3 @@
-# Writing a Value That Does Not Fit in One Packet (Long Write)
-
 The goal of this stage is as follows:
 *  Reading had the same problem and you never had to notice. A Read Response carries at most MTU-1 bytes, and anything longer came in pieces your client fetched with Read Blob requests on your behalf.
 *  Writing has the same problem and solves it differently. There is no `Write Blob`; the client stages the pieces and they land all at once.

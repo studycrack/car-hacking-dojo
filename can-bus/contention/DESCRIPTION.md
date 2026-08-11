@@ -1,5 +1,3 @@
-# Out-Talking the Controller That Says No (Contention)
-
 The goal of this stage is as follows:
 *  The immobiliser will not authorise the engine until the smart key ECU reports that the key has been validated. That result travels as an ordinary frame, and nothing in the frame says who sent it.
 *  The work is not to defeat the key check. It is to report a validated result yourself.

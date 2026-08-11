@@ -1,5 +1,3 @@
-# Enumerating Controllers and Data Identifiers (Enumeration)
-
 The goal of this stage is as follows:
 *  Last time you were told the engine controller sits at `0x7E0`. On a car you have never seen, nobody tells you.
 *  ISO 15765-4 reserves `0x7E0` through `0x7E7` for diagnostic requests, with responses eight above, at `0x7E8` through `0x7EF`.

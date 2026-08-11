@@ -1,5 +1,3 @@
-# Reading and Clearing DTCs to Cover Your Tracks (Fault Memory)
-
 The goal of this stage is as follows:
 *  A controller handed a request it cannot serve does not just answer `7F` and forget. It records a **DTC**.
 *  A DTC is three bytes of identifier and one of status, and it stays until a technician clears it.

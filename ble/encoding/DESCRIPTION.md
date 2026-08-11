@@ -1,5 +1,3 @@
-# Decoding Values Stored as Hex and Base64 (Encoding)
-
 The goal of this stage is as follows:
 *  This module is the one that lets a phone act as a key.
 *  Read its characteristics and you get a value that looks like nothing at all.

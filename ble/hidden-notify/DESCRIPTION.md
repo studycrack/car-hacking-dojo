@@ -1,5 +1,3 @@
-# Using a Capability the Declaration Does Not Advertise (Hidden Notify)
-
 The goal of this stage is as follows:
 *  Enumerate this dongle and its debug characteristic reads `debug channel idle`.
 *  Its declaration says `READ` and nothing else. No notify property means nothing to subscribe to, and a tool that builds its interface from declarations will not even offer you the option.

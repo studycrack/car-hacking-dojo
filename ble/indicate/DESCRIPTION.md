@@ -1,5 +1,3 @@
-# Confirming Each Indication to Receive the Whole Log (Indicate)
-
 The goal of this stage is as follows:
 *  A notification is fire and forget. The peripheral pushes it and moves on, and if it never arrived, nobody finds out.
 *  For anything that matters that is the wrong trade, so ATT has a second push: the **indication**, which the client must acknowledge with a Handle Value Confirmation before the peripheral sends another.

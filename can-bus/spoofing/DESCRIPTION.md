@@ -1,5 +1,3 @@
-# Reverse Engineering a Signal to Lie to the Cluster (Spoofing)
-
 The goal of this stage is as follows:
 *  In the field nobody hands you a message layout. Identifiers and byte positions vary by manufacturer, model and year, and are not published.
 *  You work them out by lining up what you can see on a display against what you can capture on the bus.

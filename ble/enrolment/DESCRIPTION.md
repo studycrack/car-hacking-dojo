@@ -1,5 +1,3 @@
-# Enrolling a Key While the Car Is Not Asking (Enrolment)
-
 The goal of this stage is as follows:
 *  Tapping a key card is inconvenient twice, so this car stays willing for a short while after the owner presents theirs, rather than asking again before it will drive.
 *  The authorisation that window grants is too general. It also covers **enrolling an entirely new key**, with no further authentication and nothing on the display to say a key was added.

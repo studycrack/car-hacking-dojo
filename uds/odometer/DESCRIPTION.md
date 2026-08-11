@@ -1,5 +1,3 @@
-# Correcting an Odometer Recorded in Several Controllers (WriteDataByIdentifier)
-
 The goal of this stage is as follows:
 *  Odometer rollback is the most common vehicle crime there is, and it is also a single diagnostic operation.
 *  Service `0x2E`, **WriteDataByIdentifier**, is the other half of the `0x22` you already know. Same identifier space, same session rules, and writing is not served in the default session.

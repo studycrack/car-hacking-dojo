@@ -1,5 +1,3 @@
-# Finding a BLE Peripheral and Walking Its GATT Table (Discovery)
-
 The goal of this stage is as follows:
 *  Somebody plugged a dongle into this car's OBD-II port and forgot about it.
 *  It is wired directly to the diagnostic bus you spent the last two modules attacking, and it also talks Bluetooth, because it has a phone app to answer.
