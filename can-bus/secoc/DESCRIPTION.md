@@ -1,7 +1,7 @@
 # Forging an Authenticated Frame Without the Key (SecOC)
 
 The goal of this stage is as follows:
-*  **SecOC** attaches a **MAC** to frames that matter, computed with a key the sender and receiver share.
+*  **SecOC** attaches a **MAC**, computed with a key the sender and receiver share, to frames that matter.
 *  Every transmission carries the payload, a **freshness value** and a truncated MAC.
 *  Freshness must never go backwards, so replaying a frame you saw earlier is refused.
 *  This car's body controller takes door commands on `0x1B0`: two bytes of payload, one of freshness, three of MAC, six in total.
@@ -28,5 +28,9 @@ candump vcan0,1B0:7FF
    *  Watch what the MAC does when the payload is the same.
    *  Watch what the MAC does when the freshness differs.
 *  Use what you found to build an unlock command, send it, and read the result off `0x1B1`.
+
+```
+cansend vcan0 1B0#<payload><freshness><mac>
+```
 
 Unlock the doors and the flag goes out on the bus, on its own identifier rather than the one you filtered for. Watch all of it with `candump -a vcan0`!

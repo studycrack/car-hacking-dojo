@@ -15,7 +15,8 @@ cantools dump /challenge/vehicle.dbc
 ```
 
 *  Work out the signal names and bit positions of `BCM_Command`.
-*  Run your script with `/usr/bin/python3`. There are two interpreters here and `cantools` is installed in the challenge image one, which plain `python3` does not have.
+*  `BCM_Command` carries four signals, not two. `encode` refuses to build a frame unless you give it a value for every one of them, so the two you do not care about still need something.
+*  Run your script with `/usr/bin/python3`. There are two interpreters here, and only the one in the challenge image has `cantools`. Plain `python3` does not.
 
 ```
 /usr/bin/python3 -c 'import cantools; print(cantools.__version__)'

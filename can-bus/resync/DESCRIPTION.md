@@ -5,12 +5,12 @@ The goal of this stage is as follows:
 *  The assumption underneath is that only the real fob can produce consecutive valid codes. A recording can: it holds a run of them.
 *  Replaying a captured sequence drags the counter back to where it was recorded, and the codes that follow it in the recording become live again.
 *  This receiver is the one you already defeated with an unconsumed code, plus that tolerance. The single spare code will not reach: the counter has moved far past your recording by the time you use it.
-*  `0x19A` reports on it.
+*  `0x19A` reports on the receiver.
    *  byte 0: `01` locked / `00` unlocked
    *  byte 1: how many times it has been unlocked
    *  byte 2: `01` unlocked / `02` counter behind / `03` code did not verify / `04` resynchronised
    *  bytes 3-4: the counter it currently accepts, big endian
-*  Unlock the car with a code it had already moved past.
+*  Unlock the car with a code the counter had already moved past.
 
 Task:
 *  Record a press, and keep the whole burst. The counters in it are consecutive.
@@ -28,6 +28,6 @@ candump -l vcan0 &
 cansend vcan0 <fob identifier>#<counter><code>
 ```
 
-*  Byte 0 of `0x19A` goes to `00` and byte 1 climbs.
+*  Byte 1 of `0x19A` climbs by one as the car unlocks. Byte 0 went to `00` on your very first press, so it tells you nothing here.
 
-Unlock the car from behind its own counter and the flag goes out on the bus, on its own identifier rather than the one you filtered for. Watch all of it with `candump -a vcan0`!
+Unlock the car from behind its own counter and the flag goes out on the bus. Watch for it with `candump -a vcan0`!

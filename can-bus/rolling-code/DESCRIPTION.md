@@ -1,9 +1,9 @@
 # Picking an Unconsumed Rolling Code Out of a Burst (Replay)
 
 The goal of this stage is as follows:
-*  A rolling code has the fob and the receiver share a secret and a counter. Each press sends the counter and a code derived from it.
-*  The receiver refuses a counter it has already accepted, and anything below it, so a straight recording played back is ignored.
-*  But the fob does not transmit once. Radio gets lost, so one press goes out **three times, each with a different counter**.
+*  In a rolling code, the fob and the receiver share a secret and a counter. Each press sends the counter and a code derived from it.
+*  The receiver refuses a counter it has already accepted, and anything below it, so replaying the frame it acted on gets you nothing.
+*  The fob does not transmit just once. Radio gets lost, so one press goes out **three times, each with a different counter**.
 *  The receiver acts on the first one it decodes and then stops listening for a moment, which leaves the rest of the burst unconsumed.
 *  A fob frame is six bytes: two of counter, four of code.
 *  You need to unlock the car with a code recorded **more than five seconds ago**.

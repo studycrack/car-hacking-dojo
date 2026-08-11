@@ -20,7 +20,22 @@ candump -a vcan0
 candump -a vcan0,<the identifier you found>:7FF
 ```
 
-*  Watch until you have seen every fragment.
+*  The fragments scroll past faster than you can copy them, so send the capture to a file and work on that.
+
+```
+timeout 12 candump vcan0,<the identifier you found>:7FF > /tmp/fragments.txt
+```
+
+*  Twelve seconds covers more than one full round, so every fragment is in there.
 *  Sort by the first byte of each payload, then strip that byte and join the rest.
+
+```
+#!/usr/bin/python3
+pieces = {}
+for line in open("/tmp/fragments.txt"):
+    payload = [int(x, 16) for x in line.split("]")[1].split()]
+    pieces[payload[0]] = bytes(payload[1:])
+print(b"".join(pieces[index] for index in sorted(pieces)).decode())
+```
 
 Join the fragments in index order and you have the flag!
