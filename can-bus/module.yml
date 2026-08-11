@@ -18,9 +18,6 @@ resources:
       vehicle, and the standard Linux CAN tooling to work with it: `candump` to
       listen, `cansend` to transmit.
 
-  - type: header
-    content: Reading the bus
-
   - id: sniffing
     type: challenge
     name: level1
@@ -32,9 +29,6 @@ resources:
   - id: fob-capture
     type: challenge
     name: level3
-
-  - type: header
-    content: Replaying and forging frames
 
   - id: injection
     type: challenge
@@ -52,9 +46,6 @@ resources:
     type: challenge
     name: level7
 
-  - type: header
-    content: Working out what the bytes mean
-
   - id: spoofing
     type: challenge
     name: level8
@@ -62,9 +53,6 @@ resources:
   - id: dbc
     type: challenge
     name: level9
-
-  - type: header
-    content: Defeating a checksum and a MAC
 
   - id: integrity
     type: challenge

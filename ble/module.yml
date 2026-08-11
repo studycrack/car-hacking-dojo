@@ -67,9 +67,6 @@ resources:
 
           asyncio.run(main())
 
-  - type: header
-    content: Walking a GATT table
-
   - id: discovery
     type: challenge
     name: level1
@@ -94,9 +91,6 @@ resources:
     type: challenge
     name: level6
 
-  - type: header
-    content: Receiving what the peripheral pushes
-
   - id: notify
     type: challenge
     name: level7
@@ -117,9 +111,6 @@ resources:
     type: challenge
     name: level11
 
-  - type: header
-    content: Reading advertising without connecting
-
   - id: beacon
     type: challenge
     name: level12
@@ -131,9 +122,6 @@ resources:
   - id: service-data
     type: challenge
     name: level14
-
-  - type: header
-    content: Finding what the firmware hid
 
   - id: hidden-handles
     type: challenge
