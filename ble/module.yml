@@ -72,81 +72,81 @@ resources:
 
   - id: discovery
     type: challenge
-    name: Enumerating a Peripheral
+    name: level1
 
   - id: descriptors
     type: challenge
-    name: Reading the Fine Print
+    name: level2
 
   - id: encoding
     type: challenge
-    name: Encoding Is Not Encryption
+    name: level3
 
   - id: fragments
     type: challenge
-    name: Reassembling a Record
+    name: level4
 
   - id: unlock
     type: challenge
-    name: Write, Then Read
+    name: level5
 
   - id: sequence
     type: challenge
-    name: An Interlock That Counts
+    name: level6
 
   - type: header
     content: Receiving what the peripheral pushes
 
   - id: notify
     type: challenge
-    name: Subscribing for Pushes
+    name: level7
 
   - id: indicate
     type: challenge
-    name: Acknowledged Delivery
+    name: level8
 
   - id: stream
     type: challenge
-    name: Reassembling a Stream
+    name: level9
 
   - id: trigger
     type: challenge
-    name: Subscribe, Then Ask
+    name: level10
 
   - id: hidden-notify
     type: challenge
-    name: A Property That Lies
+    name: level11
 
   - type: header
     content: Reading advertising without connecting
 
   - id: beacon
     type: challenge
-    name: Reading the Broadcast
+    name: level12
 
   - id: scan-response
     type: challenge
-    name: Asking to Be Told More
+    name: level13
 
   - id: service-data
     type: challenge
-    name: Typed Advertising Data
+    name: level14
 
   - type: header
     content: Finding what the firmware hid
 
   - id: hidden-handles
     type: challenge
-    name: Walking the Handles
+    name: level15
 
   - id: enrolment
     type: challenge
-    name: Enrolling a Key of Your Own
+    name: level16
 
   - id: relay
     type: challenge
-    name: Relaying a Proximity Check
+    name: level17
 
   - id: long-write
     type: challenge
-    name: Writing More Than Fits
+    name: level18

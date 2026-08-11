@@ -15,4 +15,4 @@ resources:
 
   - id: pivot
     type: challenge
-    name: From the Air to the Bus
+    name: level1

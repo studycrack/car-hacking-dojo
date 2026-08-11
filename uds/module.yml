@@ -24,44 +24,44 @@ resources:
 
   - id: iso-tp
     type: challenge
-    name: Segmented Transport
+    name: level1
 
   - type: header
     content: Enumerating what is there
 
   - id: ecu-discovery
     type: challenge
-    name: Enumerating Controllers
+    name: level2
 
   - type: header
     content: Getting past what says no
 
   - id: security-access
     type: challenge
-    name: Defeating SecurityAccess
+    name: level3
 
   - type: header
     content: Reading and writing a controller's memory
 
   - id: firmware-dump
     type: challenge
-    name: Dumping the Firmware
+    name: level4
 
   - id: fault-memory
     type: challenge
-    name: Covering Your Tracks
+    name: level5
 
   - id: reflash
     type: challenge
-    name: Writing It Back
+    name: level6
 
   - id: odometer
     type: challenge
-    name: Rewriting What the Car Remembers
+    name: level7
 
   - type: header
     content: Reaching what the connector cannot
 
   - id: gateway
     type: challenge
-    name: Crossing the Gateway
+    name: level8

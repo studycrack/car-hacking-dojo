@@ -23,53 +23,53 @@ resources:
 
   - id: sniffing
     type: challenge
-    name: Listening to the Bus
+    name: level1
 
   - id: filtering
     type: challenge
-    name: Finding the Signal
+    name: level2
 
   - id: fob-capture
     type: challenge
-    name: Catching a One-Shot
+    name: level3
 
   - type: header
     content: Replaying and forging frames
 
   - id: injection
     type: challenge
-    name: Forging Frames
+    name: level4
 
   - id: contention
     type: challenge
-    name: Out-Talking a Controller
+    name: level5
 
   - id: rolling-code
     type: challenge
-    name: Rolling Codes
+    name: level6
 
   - id: resync
     type: challenge
-    name: Walking a Counter Backwards
+    name: level7
 
   - type: header
     content: Working out what the bytes mean
 
   - id: spoofing
     type: challenge
-    name: Reversing the Layout
+    name: level8
 
   - id: dbc
     type: challenge
-    name: Reading the Database
+    name: level9
 
   - type: header
     content: Defeating a checksum and a MAC
 
   - id: integrity
     type: challenge
-    name: Beating the Checksum
+    name: level10
 
   - id: secoc
     type: challenge
-    name: Authenticated Frames
+    name: level11
