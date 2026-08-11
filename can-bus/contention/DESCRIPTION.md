@@ -25,7 +25,7 @@ candump vcan0,3D0:7FF,3D8:7FF
 cansend vcan0 3D0#01
 ```
 
-*  Report it faster than the controller reports otherwise, and do not stop. The loop never returns, so put it in the background or use a second terminal.
+*  Report it faster than the controller reports otherwise, and do not stop. The loop never returns, so run it in a second terminal or in the background.
 
 ```
 while true; do cansend vcan0 3D0#01; done &

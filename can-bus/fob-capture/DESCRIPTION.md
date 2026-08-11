@@ -8,7 +8,7 @@ The goal of this stage is as follows:
 *  You need to start the capture first and press the button second.
 
 Task:
-*  Start capturing. Use a second terminal, or put it in the background with `&`.
+*  Start the capture in a second terminal, or run it in the background.
 
 ```
 candump -a vcan0 > /tmp/capture.txt &
