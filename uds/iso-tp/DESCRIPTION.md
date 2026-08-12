@@ -12,7 +12,7 @@ The goal of this stage is as follows:
 *  The **receiver** drives the transfer. A sender that has sent a First Frame stops and waits for flow control.
 *  **UDS** (ISO 14229) rides on top: a request is a service byte and arguments, and a positive response is the service byte plus `0x40`.
 *  The engine controller receives on `0x7E0` and answers on `0x7E8`.
-*  You need to send the flow control yourself to get the VIN, then read DID `0xF1AB`.
+*  You need to send the flow control yourself to get the VIN, then read data identifier (**DID**) `0xF1AB`.
 
 Task:
 *  Start a capture so you can see the responses.

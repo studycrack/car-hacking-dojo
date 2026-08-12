@@ -17,8 +17,14 @@ The goal of this stage is as follows:
 
 Task:
 *  Work out where the flash lives.
-   *  Ask for identification record `0xF18C` to get the part name.
+   *  Ask for DID `0xF18C` to get the part name.
    *  The part name tells you its memory layout.
+*  Enter an extended session. `0x23` is not served outside one.
+
+```
+10 03
+```
+
 *  Find the largest read the controller will serve. Ask for more and it refuses.
 *  Loop until you have the whole image, scripting it with `isotp.py` and `vcan.py` from `/challenge`.
 
@@ -31,6 +37,6 @@ import isotp, vcan
 bus = vcan.Bus("vcan0")
 response = isotp.request(bus, 0x7E0, 0x7E8, bytes.fromhex("22F190"), timeout=0.2)
 ```
-*  Search the image for the service that is in no specification, and for the value it demands, then call it.
+*  Search the image for the service that is in no specification and the value it demands, then call the service.
 
 Call the hidden service correctly and its response carries the flag!
