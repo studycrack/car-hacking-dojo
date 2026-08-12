@@ -11,4 +11,8 @@ modules:
   - id: can-bus
   - id: uds
   - id: ble
+    visibility:
+      start: 2099-01-01
   - id: capstone
+    visibility:
+      start: 2099-01-01
