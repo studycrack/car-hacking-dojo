@@ -6,6 +6,12 @@ The goal of this stage is as follows:
 
 Task:
 *  Send `3E 00` (TesterPresent) to each address and see which ones answer.
+   *  A live address answers at once. A dead one never answers, and `isotpreq` waits five seconds for it. That silence is the whole cost of the sweep, so cut it short.
+
+```
+timeout 0.2 isotpreq vcan0 700 708 3E00
+```
+
 *  Sweep DIDs on every controller you find, using service `0x22`.
 
 ```
